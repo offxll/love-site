@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Змейка 🐍</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  html, body {
+    height: 100%;
+    overflow: hidden;
+    font-family: 'Segoe UI', -apple-system, sans-serif;
+    background: #0a0f1a;
+  }
+
+  body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: env(safe-area-inset-top) 16px env(safe-area-inset-bottom);
+    user-select: none;
+    -webkit-user-select: none;
+    position: relative;
+  }
+
+  /* Фон */
+  .bg-glow {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    overflow: hidden;
+  }
+
+  .glow {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(90px);
+    opacity: 0.35;
+    animation: drift 25s ease-in-out infinite;
+  }
+
+  .glow:nth-child(1) { width: 55vmax; height: 55vmax; background: #2ecc71; top: -20%; left: -20%; }
+  .glow:nth-child(2) { width: 45vmax; height: 45vmax; background: #ff2e63; bottom: -20%; right: -20%; animation-delay: -8s; }
+  .glow:nth-child(3) { width: 40vmax; height: 40vmax; background: #4a7cff; top: 40%; left: 40%; animation-delay: -16s; }
+
+  @keyframes drift {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    50%      { transform: translate(8vw, -6vh) scale(1.15); }
+  }
+
+  /* Контейнер игры */
+  .game {
+    position: relative;
+    z-index: 3;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+    animation: fadeIn 0.6s ease;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: scale(0.96); }
+    to   { opacity: 1; transform: scale(1); }
+  }
+
+  /* Панель счёта */
+  .stats {
+    display: flex;
+    gap: 10px;
+    width: 100%;
+    max-width: 460px;
+  }
+
+  .stat {
+    flex: 1;
+    padding: 10px 16px;
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.06);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1.5px solid rgba(255, 255, 255, 0.09);
+    text-align: center;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
+  }
+
+  .stat-label {
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: #8fb8a4;
+    font-weight: 700;
+    margin-bottom: 2px;
+  }
+
+  .stat-value {
+    font-size: 26px;
+    font-weight: 900;
+    color: #fff;
+    line-height: 1.1;
+    transition: transform 0.2s ease;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .stat-value.bump {
+    transform: scale(1.25);
+    color: #7effb0;
+  }
+
+  /* Обёртка канваса */
+  .canvas-wrap {
+    position: relative;
+    border-radius: 22px;
+    overflow: hidden;
+    box-shadow:
+      0 0 0 1.5px rgba(255, 255, 255, 0.1),
+      0 25px 60px rgba(0, 0, 0, 0.5),
+      0 0 70px rgba(46, 204, 113, 0.15);
+    touch-action: none;
+  }
+
+  canvas {
+    display: block;
+    touch-action: none;
+    cursor: pointer;
+  }
+
+  /* Оверлей */
+  .overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(5, 15, 25, 0.85);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    z-index: 5;
+    transition: opacity 0.35s ease, visibility 0.35s;
+    text-align: center;
+    padding: 20px;
+  }
+
+  .overlay.hidden {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+  }
+
+  .overlay-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .overlay-emoji {
+    font-size: 68px;
+    line-height: 1;
+    filter: drop-shadow(0 0 25px rgba(80, 255, 150, 0.6));
+    animation: bob 2s ease-in-out infinite;
+  }
+
+  @keyframes bob {
+    0%, 100% { transform: translateY(0) rotate(-4deg); }
+    50%      { transform: translateY(-8px) rotate(4deg); }
+  }
+
+  .overlay-title {
+    font-size: 24px;
+    font-weight: 800;
+    color: #fff;
+    text-shadow: 0 2px 12px rgba(80, 255, 150, 0.4);
+  }
+
+  .overlay-text {
+    font-size: 14px;
+    color: #b8d8c4;
+    max-width: 260px;
+    line-height: 1.5;
+  }
+
+  .new-record {
+    display: none;
+    font-size: 13px;
+    font-weight: 800;
+    letter-spacing: 1.5px;
+    padding: 6px 14px;
+    border-radius: 20px;
+    background: linear-gradient(135deg, #ffd700 0%, #ff9500 100%);
+    color: #4a1a00;
+    box-shadow: 0 6px 20px rgba(255, 180, 0, 0.5);
+    animation: shine 1.5s ease-in-out infinite;
+  }
+
+  .new-record.show { display: inline-block; }
+
+  @keyframes shine {
+    0%, 100% { transform: scale(1); }
+    50%      { transform: scale(1.06); }
+  }
+
+  .play-btn {
+    padding: 15px 36px;
+    border: none;
+    border-radius: 44px;
+    background: linear-gradient(135deg, #4ade80 0%, #16a34a 100%);
+    color: #fff;
+    font-family: inherit;
+    font-size: 16px;
+    font-weight: 800;
+    letter-spacing: 0.8px;
+    cursor: pointer;
+    box-shadow:
+      0 7px 0 #0f6b32,
+      0 15px 35px rgba(46, 204, 113, 0.45),
+      inset 0 1px 0 rgba(255, 255, 255, 0.35);
+    transition: transform 0.1s, box-shadow 0.1s;
+    touch-action: manipulation;
+    -webkit-appearance: none;
+    margin-top: 4px;
+  }
+
+  .play-btn:active {
+    transform: translateY(4px);
+    box-shadow:
+      0 3px 0 #0f6b32,
+      0 8px 20px rgba(46, 204, 113, 0.45),
+      inset 0 1px 0 rgba(255, 255, 255, 0.35);
+  }
+
+  /* Подсказка */
+  .hint {
+    font-size: 12px;
+    color: #7a9b88;
+    text-align: center;
+    letter-spacing: 0.5px;
+    opacity: 0.85;
+    line-height: 1.5;
+    padding: 0 12px;
+  }
+
+  /* Кнопка паузы */
+  .pause-btn {
+    position: fixed;
+    top: calc(16px + env(safe-area-inset-top));
+    right: 16px;
+    z-index: 10;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    color: #fff;
+    font-size: 18px;
+    cursor: pointer;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    transition: transform 0.15s;
+    -webkit-appearance: none;
+    touch-action: manipulation;
+  }
+
+  .pause-btn.show { display: flex; }
+  .pause-btn:active { transform: scale(0.9); }
+</style>
+</head>
+<body>
+
+  <div class="bg-glow">
+    <div class="glow"></div>
+    <div class="glow"></div>
+    <div class="glow"></div>
+  </div>
+
+  <button class="pause-btn" id="pauseBtn">⏸</button>
+
+  <div class="game">
+    <div class="stats">
+      <div class="stat">
+        <div class="stat-label">Счёт</div>
+        <div class="stat-value" id="scoreEl">0</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Рекорд</div>
+        <div class="stat-value" id="highScoreEl">0</div>
+      </div>
+    </div>
+
+    <div class="canvas-wrap">
+      <canvas id="game"></canvas>
+      <div class="overlay" id="overlay">
+        <div class="overlay-content">
+          <div class="overlay-emoji" id="overlayEmoji">🐍</div>
+          <div class="overlay-title" id="overlayTitle">Змейка</div>
+          <div class="overlay-text" id="overlayText">
+            Свайпай по экрану, чтобы управлять змейкой.<br>
+            Собирай яблоки 🍎 и не врезайся!
+          </div>
+          <div class="new-record" id="newRecord">🏆 НОВЫЙ РЕКОРД!</div>
+          <button class="play-btn" id="playBtn">Играть</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="hint" id="hint">
+      👆 Свайпай по экрану • ⌨️ Стрелки на клавиатуре
+    </div>
+  </div>
+
+<script>
+  /* ============ НАСТРОЙКИ ============ */
+  const GRID = 17;              // 17x17 клеток
+  const START_TICK = 145;        // мс на шаг в начале
+  const MIN_TICK = 75;           // минимальный интервал (быстрее уже нельзя)
+  const SPEED_STEP = 3;          // на сколько мс ускоряться за каждое яблоко
+
+  const canvas = document.getElementById('game');
+  const ctx = canvas.getContext('2d');
+  const overlay = document.getElementById('overlay');
+  const overlayEmoji = document.getElementById('overlayEmoji');
+  const overlayTitle = document.getElementById('overlayTitle');
+  const overlayText = document.getElementById('overlayText');
+  const newRecordEl = document.getElementById('newRecord');
+  const playBtn = document.getElementById('playBtn');
+  const scoreEl = document.getElementById('scoreEl');
+  const highScoreEl = document.getElementById('highScoreEl');
+  const pauseBtn = document.getElementById('pauseBtn');
+  const hintEl = document.getElementById('hint');
+
+  let cellSize = 20;
+  let dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+  let snake = [];
+  let direction = { x: 1, y: 0 };
+  let inputQueue = [];
+  let apple = { x: 0, y: 0 };
+  let score = 0;
+  let highScore = parseInt(localStorage.getItem('snake_high_score') || '0', 10);
+  let gameState = 'idle'; // idle | playing | paused | over
+  let tickInterval = null;
+  let currentTickMs = START_TICK;
+  let lastTickTime = 0;
+
+  /* ============ РАЗМЕРЫ ============ */
+  function resize() {
+    const maxW = Math.min(window.innerWidth - 32, 460);
+    const maxH = window.innerHeight - 220;
+    const size = Math.max(240, Math.min(maxW, maxH));
+    cellSize = Math.floor(size / GRID);
+    const total = cellSize * GRID;
+
+    canvas.width = total * dpr;
+    canvas.height = total * dpr;
+    canvas.style.width = total + 'px';
+    canvas.style.height = total + 'px';
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    draw();
+  }
+
+  window.addEventListener('resize', resize);
+  window.addEventListener('orientationchange', () => setTimeout(resize, 100));
+
+  /* ============ ИГРА ============ */
+  function startGame() {
+    // Инициализация
+    snake = [
+      { x: 8, y: 8 },
+      { x: 7, y: 8 },
+      { x: 6, y: 8 }
+    ];
+    direction = { x: 1, y: 0 };
+    inputQueue = [];
+    score = 0;
+    currentTickMs = START_TICK;
+    scoreEl.textContent = '0';
+
+    spawnApple();
+
+    // Убираем оверлей
+    overlay.classList.add('hidden');
+    newRecordEl.classList.remove('show');
+    pauseBtn.classList.add('show');
+    pauseBtn.textContent = '⏸';
+    hintEl.style.display = 'block';
+
+    gameState = 'playing';
+    startLoop();
+    draw();
+  }
+
+  function startLoop() {
+    if (tickInterval) clearInterval(tickInterval);
+    tickInterval = setInterval(tick, currentTickMs);
+  }
+
+  function tick() {
+    if (gameState !== 'playing') return;
+
+    // Применяем следующее направление
+    if (inputQueue.length > 0) {
+      direction = inputQueue.shift();
+    }
+
+    const head = snake[0];
+    const newHead = { x: head.x + direction.x, y: head.y + direction.y };
+
+    // Стена
+    if (newHead.x < 0 || newHead.x >= GRID || newHead.y < 0 || newHead.y >= GRID) {
+      return gameOver();
+    }
+
+    // Самоедство (исключаем хвост, он уйдёт)
+    const checkLen = snake.length - 1;
+    for (let i = 0; i < checkLen; i++) {
+      if (snake[i].x === newHead.x && snake[i].y === newHead.y) {
+        return gameOver();
+      }
+    }
+
+    // Двигаем
+    snake.unshift(newHead);
+
+    // Съели яблоко?
+    if (newHead.x === apple.x && newHead.y === apple.y) {
+      score++;
+      scoreEl.textContent = score;
+      bumpElement(scoreEl);
+      spawnApple();
+      if (navigator.vibrate) navigator.vibrate(15);
+
+      // Ускоряем
+      currentTickMs = Math.max(MIN_TICK, START_TICK - score * SPEED_STEP);
+      if (tickInterval) {
+        clearInterval(tickInterval);
+        tickInterval = setInterval(tick, currentTickMs);
+      }
+    } else {
+      snake.pop();
+    }
+
+    draw();
+  }
+
+  function gameOver() {
+    gameState = 'over';
+    if (tickInterval) {
+      clearInterval(tickInterval);
+      tickInterval = null;
+    }
+    if (navigator.vibrate) navigator.vibrate([30, 50, 30]);
+
+    // Рекорд
+    const isNewRecord = score > highScore;
+    if (isNewRecord) {
+      highScore = score;
+      localStorage.setItem('snake_high_score', String(highScore));
+      highScoreEl.textContent = highScore;
+      bumpElement(highScoreEl);
+    }
+
+    // Обновляем оверлей
+    overlayEmoji.textContent = '💀';
+    overlayTitle.textContent = 'Игра окончена';
+    overlayText.innerHTML =
+      'Твой счёт: <strong style="color:#7effb0">' + score + '</strong><br>' +
+      'Рекорд: <strong style="color:#ffd700">' + highScore + '</strong>';
+    playBtn.textContent = 'Ещё раз 🔄';
+    newRecordEl.classList.toggle('show', isNewRecord);
+
+    pauseBtn.classList.remove('show');
+    overlay.classList.remove('hidden');
+
+    draw();
+  }
+
+  function pauseGame() {
+    if (gameState !== 'playing') return;
+    gameState = 'paused';
+    if (tickInterval) {
+      clearInterval(tickInterval);
+      tickInterval = null;
+    }
+    overlayEmoji.textContent = '⏸';
+    overlayTitle.textContent = 'Пауза';
+    overlayText.innerHTML = 'Ты можешь продолжить, когда готов';
+    playBtn.textContent = 'Продолжить ▶';
+    newRecordEl.classList.remove('show');
+    overlay.classList.remove('hidden');
+    pauseBtn.textContent = '▶';
+  }
+
+  function resumeGame() {
+    if (gameState !== 'paused') return;
+    gameState = 'playing';
+    overlay.classList.add('hidden');
+    pauseBtn.textContent = '⏸';
+    startLoop();
+  }
+
+  function spawnApple() {
+    // Собираем все свободные клетки
+    const occupied = new Set();
+    snake.forEach(s => occupied.add(s.x + ',' + s.y));
+
+    const free = [];
+    for (let y = 0; y < GRID; y++) {
+      for (let x = 0; x < GRID; x++) {
+        if (!occupied.has(x + ',' + y)) free.push({ x, y });
+      }
+    }
+
+    if (free.length === 0) return;
+    apple = free[Math.floor(Math.random() * free.length)];
+  }
+
+  /* ============ ОТРИСОВКА ============ */
+  function draw() {
+    const total = GRID * cellSize;
+
+    // Фон
+    ctx.fillStyle = '#0a1622';
+    ctx.fillRect(0, 0, total, total);
+
+    // Тонкая сетка
+    ctx.strokeStyle = 'rgba(80, 200, 140, 0.05)';
+    ctx.lineWidth = 1;
+    for (let i = 1; i < GRID; i++) {
+      ctx.beginPath();
+      ctx.moveTo(i * cellSize + 0.5, 0);
+      ctx.lineTo(i * cellSize + 0.5, total);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(0, i * cellSize + 0.5);
+      ctx.lineTo(total, i * cellSize + 0.5);
+      ctx.stroke();
+    }
+
+    // Красивое свечение по краям (виньетка)
+    const vg = ctx.createRadialGradient(total/2, total/2, total*0.3, total/2, total/2, total*0.75);
+    vg.addColorStop(0, 'rgba(0,0,0,0)');
+    vg.addColorStop(1, 'rgba(0,20,15,0.5)');
+    ctx.fillStyle = vg;
+    ctx.fillRect(0, 0, total, total);
+
+    // Яблоко
+    drawApple(apple.x, apple.y);
+
+    // Змейка
+    for (let i = snake.length - 1; i >= 0; i--) {
+      drawSegment(snake[i].x, snake[i].y, i === 0, i, snake.length);
+    }
+  }
+
+  function drawApple(x, y) {
+    const cx = x * cellSize + cellSize / 2;
+    const cy = y * cellSize + cellSize / 2;
+    const r = cellSize * 0.36;
+
+    // Пульсирующее свечение
+    const pulse = 0.85 + Math.sin(Date.now() / 300) * 0.15;
+    ctx.shadowColor = 'rgba(255, 60, 100, ' + (0.7 * pulse) + ')';
+    ctx.shadowBlur = cellSize * 0.8 * pulse;
+
+    const grad = ctx.createRadialGradient(cx - r * 0.3, cy - r * 0.3, r * 0.1, cx, cy, r);
+    grad.addColorStop(0, '#ff8fac');
+    grad.addColorStop(0.5, '#ff2e63');
+    grad.addColorStop(1, '#b00c38');
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+
+    // Блик
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+    ctx.beginPath();
+    ctx.arc(cx - r * 0.35, cy - r * 0.35, r * 0.22, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Черенок
+    ctx.strokeStyle = '#4a2c1a';
+    ctx.lineWidth = Math.max(1.5, cellSize * 0.06);
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(cx, cy - r * 0.85);
+    ctx.lineTo(cx + r * 0.15, cy - r * 1.1);
+    ctx.stroke();
+
+    // Листик
+    ctx.fillStyle = '#4caf50';
+    ctx.beginPath();
+    ctx.ellipse(cx + r * 0.4, cy - r * 0.95, r * 0.28, r * 0.14, -0.5, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  function drawSegment(x, y, isHead, index, total) {
+    const px = x * cellSize;
+    const py = y * cellSize;
+    const pad = Math.max(1, cellSize * 0.07);
+    const size = cellSize - pad * 2;
+    const t = index / Math.max(1, total - 1);
+
+    if (isHead) {
+      ctx.shadowColor = 'rgba(100, 255, 160, 0.9)';
+      ctx.shadowBlur = cellSize * 0.8;
+    }
+
+    // Цвет от головы (ярко-зелёный) к хвосту (тёмно-зелёный)
+    const lightness = isHead ? 0.65 : 0.55 - t * 0.25;
+    const grad = ctx.createRadialGradient(
+      px + pad + size * 0.35, py + pad + size * 0.35, size * 0.05,
+      px + pad + size * 0.5, py + pad + size * 0.5, size * 0.75
+    );
+    grad.addColorStop(0, isHead ? '#b3ffd1' : '#7effb0');
+    grad.addColorStop(0.5, isHead ? '#3ee580' : '#2ecc71');
+    grad.addColorStop(1, isHead ? '#128a4a' : '#0e6b38');
+
+    ctx.fillStyle = grad;
+
+    const radius = isHead ? size * 0.38 : size * 0.28;
+    roundRect(px + pad, py + pad, size, size, radius);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+
+    // Глаза на голове
+    if (isHead) {
+      const eyeSize = Math.max(1.5, size * 0.15);
+      const off = size * 0.22;
+      let e1 = { x: 0, y: 0 }, e2 = { x: 0, y: 0 };
+
+      if (direction.x === 1) {
+        e1 = { x: px + pad + size - off, y: py + pad + off };
+        e2 = { x: px + pad + size - off, y: py + pad + size - off };
+      } else if (direction.x === -1) {
+        e1 = { x: px + pad + off, y: py + pad + off };
+        e2 = { x: px + pad + off, y: py + pad + size - off };
+      } else if (direction.y === -1) {
+        e1 = { x: px + pad + off, y: py + pad + off };
+        e2 = { x: px + pad + size - off, y: py + pad + off };
+      } else {
+        e1 = { x: px + pad + off, y: py + pad + size - off };
+        e2 = { x: px + pad + size - off, y: py + pad + size - off };
+      }
+
+      ctx.fillStyle = '#fff';
+      ctx.beginPath();
+      ctx.arc(e1.x, e1.y, eyeSize, 0, Math.PI * 2);
+      ctx.arc(e2.x, e2.y, eyeSize, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = '#0a1622';
+      ctx.beginPath();
+      ctx.arc(e1.x, e1.y, eyeSize * 0.55, 0, Math.PI * 2);
+      ctx.arc(e2.x, e2.y, eyeSize * 0.55, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+
+  function roundRect(x, y, w, h, r) {
+    r = Math.min(r, w / 2, h / 2);
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.lineTo(x + w - r, y);
+    ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+    ctx.lineTo(x + w, y + h - r);
+    ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    ctx.lineTo(x + r, y + h);
+    ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+    ctx.lineTo(x, y + r);
+    ctx.quadraticCurveTo(x, y, x + r, y);
+    ctx.closePath();
+  }
+
+  function bumpElement(el) {
+    el.classList.remove('bump');
+    void el.offsetWidth;
+    el.classList.add('bump');
+    setTimeout(() => el.classList.remove('bump'), 200);
+  }
+
+  /* ============ УПРАВЛЕНИЕ ============ */
+  function setDirection(dir) {
+    const map = {
+      up:    { x: 0,  y: -1 },
+      down:  { x: 0,  y: 1  },
+      left:  { x: -1, y: 0  },
+      right: { x: 1,  y: 0  }
+    };
+    const newDir = map[dir];
+    if (!newDir) return;
+
+    // Направление, которое будет применено следующим
+    const lastDir = inputQueue.length > 0 ? inputQueue[inputQueue.length - 1] : direction;
+
+    // Нельзя развернуться на 180
+    if (lastDir.x === -newDir.x && lastDir.y === -newDir.y) return;
+    // То же самое — игнорируем
+    if (lastDir.x === newDir.x && lastDir.y === newDir.y) return;
+
+    if (inputQueue.length < 2) inputQueue.push(newDir);
+  }
+
+  /* Клавиатура */
+  document.addEventListener('keydown', (e) => {
+    const k = e.key;
+    if (k === 'ArrowUp'    || k === 'w' || k === 'W' || k === 'ц' || k === 'Ц') setDirection('up');
+    else if (k === 'ArrowDown'  || k === 's' || k === 'S' || k === 'ы' || k === 'Ы') setDirection('down');
+    else if (k === 'ArrowLeft'  || k === 'a' || k === 'A' || k === 'ф' || k === 'Ф') setDirection('left');
+    else if (k === 'ArrowRight' || k === 'd' || k === 'D' || k === 'в' || k === 'В') setDirection('right');
+    else if (k === ' ') {
+      if (gameState === 'playing') pauseGame();
+      else if (gameState === 'paused') resumeGame();
+      e.preventDefault();
+      return;
+    } else if (k === 'Enter' && (gameState === 'idle' || gameState === 'over')) {
+      startGame();
+      return;
+    }
+    if (k.startsWith('Arrow') || k === ' ') e.preventDefault();
+  });
+
+  /* Свайпы */
+  let touchStartX = 0, touchStartY = 0, touchHandled = false;
+  const SWIPE_MIN = 22;
+
+  canvas.addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    const t = e.touches[0];
+    touchStartX = t.clientX;
+    touchStartY = t.clientY;
+    touchHandled = false;
+  }, { passive: false });
+
+  canvas.addEventListener('touchmove', (e) => {
+    e.preventDefault();
+    if (touchHandled) return;
+    const t = e.touches[0];
+    const dx = t.clientX - touchStartX;
+    const dy = t.clientY - touchStartY;
+    if (Math.abs(dx) < SWIPE_MIN && Math.abs(dy) < SWIPE_MIN) return;
+    touchHandled = true;
+
+    if (Math.abs(dx) > Math.abs(dy)) {
+      setDirection(dx > 0 ? 'right' : 'left');
+    } else {
+      setDirection(dy > 0 ? 'down' : 'up');
+    }
+  }, { passive: false });
+
+  canvas.addEventListener('touchend', (e) => {
+    e.preventDefault();
+    // Одиночный тап по экрану — старт/возобновление
+    if (!touchHandled) {
+      const t = e.changedTouches[0];
+      const dx = Math.abs(t.clientX - touchStartX);
+      const dy = Math.abs(t.clientY - touchStartY);
+      if (dx < 10 && dy < 10) {
+        if (gameState === 'idle' || gameState === 'over') startGame();
+        else if (gameState === 'paused') resumeGame();
+      }
+    }
+  }, { passive: false });
+
+  /* Клик мышью (для компьютера) */
+  canvas.addEventListener('click', () => {
+    if (gameState === 'idle' || gameState === 'over') startGame();
+    else if (gameState === 'paused') resumeGame();
+  });
+
+  /* Кнопки */
+  playBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (gameState === 'idle' || gameState === 'over') startGame();
+    else if (gameState === 'paused') resumeGame();
+  });
+
+  pauseBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (gameState === 'playing') pauseGame();
+    else if (gameState === 'paused') resumeGame();
+  });
+
+  /* Пауза при скрытии вкладки */
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden && gameState === 'playing') {
+      pauseGame();
+    }
+  });
+
+  /* ============ СТАРТ ============ */
+  highScoreEl.textContent = highScore;
+  resize();
+</script>
+</body>
+</html>
