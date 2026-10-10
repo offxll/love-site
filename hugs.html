@@ -4,6 +4,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>Обнимашки 🤗</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#ff2e88">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Обнимашки">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" type="image/png" href="icon-192.png">
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
@@ -356,9 +363,24 @@
     30% { opacity: 1; }
     100% { opacity: 0; }
   }
+
+  /* Сплэш при запуске */
+  #splash {
+    position: fixed;
+    inset: 0;
+    background: linear-gradient(160deg, #1a0420 0%, #6b1a52 100%);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 100px;
+    transition: opacity 0.5s ease;
+  }
 </style>
 </head>
 <body>
+
+  <div id="splash">🤗</div>
 
   <div class="bg-blobs">
     <div class="blob"></div>
@@ -514,7 +536,6 @@
     setStatus('Подключение...', false);
   }
 
-  // Проверяем сохранённую роль
   const savedRole = localStorage.getItem(STORAGE_ROLE);
   if (savedRole === 'her' || savedRole === 'him') {
     setRole(savedRole);
@@ -544,17 +565,14 @@
       const herCount = data.her || 0;
       const himCount = data.him || 0;
 
-      // Партнёр обнял меня?
       const newFromPartner =
         (myRole === 'her' && himCount > lastHimCount) ||
         (myRole === 'him' && herCount > lastHerCount);
 
-      // Обновляем цифры
       herCountEl.textContent = herCount;
       himCountEl.textContent = himCount;
       totalEl.textContent = herCount + himCount;
 
-      // Подсветка моего счётчика, если я обнял
       if (myRole === 'her' && herCount > lastHerCount && !initialSync) {
         bumpCounter(herCounterBox);
         herCountEl.classList.add('highlight');
@@ -566,7 +584,6 @@
         setTimeout(() => himCountEl.classList.remove('highlight'), 400);
       }
 
-      // Анимация, если партнёр обнял
       if (newFromPartner && !initialSync) {
         showPartnerHugAnimation();
       }
@@ -674,6 +691,24 @@
       audioCtx.resume();
     }
   });
+
+  /* ===== СПЛЭШ ===== */
+  window.addEventListener('load', () => {
+    setTimeout(() => {
+      const s = document.getElementById('splash');
+      if (s) {
+        s.style.opacity = '0';
+        setTimeout(() => s.remove(), 500);
+      }
+    }, 700);
+  });
+
+  /* ===== SERVICE WORKER (PWA) ===== */
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js').catch(() => {});
+    });
+  }
 </script>
 </body>
 </html>
