@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Для тебя 💕</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  html, body {
+    height: 100%;
+    overflow: hidden;
+    font-family: 'Segoe UI', -apple-system, sans-serif;
+  }
+
+  body {
+    position: relative;
+    background: linear-gradient(160deg, #1a0410 0%, #3d0d2a 40%, #6b1a45 100%);
+    color: #fff;
+    user-select: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+
+  /* ===== ФОН: мягкие пятна ===== */
+  .bg-blobs {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    overflow: hidden;
+    filter: blur(70px);
+    opacity: 0.55;
+  }
+
+  .blob {
+    position: absolute;
+    border-radius: 50%;
+    mix-blend-mode: screen;
+    animation: float 20s ease-in-out infinite;
+  }
+
+  .blob:nth-child(1) { width: 60vmax; height: 60vmax; background: #ff2e88; top: -25%; left: -20%; }
+  .blob:nth-child(2) { width: 50vmax; height: 50vmax; background: #a24bff; bottom: -25%; right: -20%; animation-delay: -7s; }
+  .blob:nth-child(3) { width: 45vmax; height: 45vmax; background: #ff8a5c; top: 35%; left: 30%; animation-delay: -14s; }
+
+  @keyframes float {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    33%      { transform: translate(8vw, -6vh) scale(1.15); }
+    66%      { transform: translate(-6vw, 8vh) scale(0.9); }
+  }
+
+  /* ===== ЛЕТЯЩИЕ СЕРДЕЧКИ ===== */
+  .hearts-layer {
+    position: fixed;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+    overflow: hidden;
+  }
+
+  .heart {
+    position: absolute;
+    bottom: -50px;
+    font-size: 20px;
+    opacity: 0;
+    animation: rise linear infinite;
+    filter: drop-shadow(0 0 8px rgba(255, 120, 180, 0.9));
+    will-change: transform, opacity;
+  }
+
+  @keyframes rise {
+    0%   { transform: translateY(0) translateX(0) rotate(0deg); opacity: 0; }
+    10%  { opacity: 0.9; }
+    90%  { opacity: 0.9; }
+    100% { transform: translateY(-110vh) translateX(40px) rotate(45deg); opacity: 0; }
+  }
+
+  /* ===== КОНТЕНТ ===== */
+  .container {
+    position: relative;
+    z-index: 3;
+    width: 100%;
+    max-width: 480px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    animation: fadeIn 1.2s ease;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Дата дня */
+  .today {
+    font-size: 13px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: #ffc8e0;
+    opacity: 0.85;
+    margin-bottom: 22px;
+    font-weight: 600;
+  }
+
+  /* Заголовок */
+  h1 {
+    font-size: clamp(26px, 7vw, 38px);
+    font-weight: 800;
+    line-height: 1.25;
+    margin-bottom: 14px;
+    background: linear-gradient(180deg, #fff 0%, #ffb8d8 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    filter: drop-shadow(0 2px 12px rgba(255, 100, 170, 0.55));
+  }
+
+  /* Фраза дня */
+  .daily {
+    font-size: clamp(15px, 4vw, 17px);
+    line-height: 1.55;
+    color: #ffe0ef;
+    margin-bottom: 30px;
+    padding: 0 10px;
+    max-width: 420px;
+    opacity: 0.95;
+    min-height: 50px;
+  }
+
+  .daily strong {
+    color: #ffb0d0;
+    font-weight: 700;
+  }
+
+  /* Большое сердце */
+  .big-heart {
+    font-size: 90px;
+    margin-bottom: 24px;
+    animation: heartbeat 1.6s ease-in-out infinite;
+    filter: drop-shadow(0 0 25px rgba(255, 80, 150, 0.7));
+    line-height: 1;
+  }
+
+  @keyframes heartbeat {
+    0%, 100% { transform: scale(1); }
+    15%      { transform: scale(1.12); }
+    30%      { transform: scale(1); }
+    45%      { transform: scale(1.08); }
+    60%      { transform: scale(1); }
+  }
+
+  /* Кнопка */
+  .main-btn {
+    display: inline-block;
+    padding: 18px 32px;
+    border: none;
+    border-radius: 50px;
+    background: linear-gradient(135deg, #ff4d94 0%, #c42a6e 100%);
+    color: #fff;
+    font-family: inherit;
+    font-size: 17px;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    box-shadow:
+      0 8px 0 #7a1a44,
+      0 15px 40px rgba(255, 60, 140, 0.5),
+      inset 0 1px 0 rgba(255,255,255,0.35);
+    transition: transform 0.1s, box-shadow 0.1s;
+    touch-action: manipulation;
+    -webkit-appearance: none;
+  }
+
+  .main-btn:active {
+    transform: translateY(5px);
+    box-shadow:
+      0 3px 0 #7a1a44,
+      0 8px 20px rgba(255, 60, 140, 0.5),
+      inset 0 1px 0 rgba(255,255,255,0.35);
+  }
+
+  /* Текст приятный снизу */
+  .footer-note {
+    position: fixed;
+    bottom: 16px;
+    left: 0; right: 0;
+    text-align: center;
+    font-size: 12px;
+    color: #ffb8d8;
+    opacity: 0.55;
+    z-index: 3;
+    padding: 0 20px;
+  }
+
+  /* ===== ВСПЛЫВАЮЩЕЕ ОКНО С КОМПЛИМЕНТОМ ===== */
+  .modal {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    background: rgba(20, 0, 15, 0.75);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.35s ease;
+  }
+
+  .modal.show {
+    opacity: 1;
+    visibility: visible;
+  }
+
+  .modal-card {
+    background: linear-gradient(160deg, #fff2f8 0%, #ffd6e8 100%);
+    color: #6b1a45;
+    border-radius: 28px;
+    padding: 36px 28px 32px;
+    max-width: 420px;
+    width: 100%;
+    text-align: center;
+    box-shadow:
+      0 0 0 2px rgba(255,255,255,0.5),
+      0 30px 70px rgba(255, 60, 140, 0.4);
+    position: relative;
+    transform: scale(0.85);
+    transition: transform 0.4s cubic-bezier(0.5, 1.6, 0.5, 1);
+  }
+
+  .modal.show .modal-card {
+    transform: scale(1);
+  }
+
+  .modal-icon {
+    font-size: 60px;
+    margin-bottom: 16px;
+    line-height: 1;
+    animation: pop 0.6s cubic-bezier(0.5, 1.6, 0.5, 1);
+  }
+
+  @keyframes pop {
+    0%   { transform: scale(0); }
+    100% { transform: scale(1); }
+  }
+
+  .modal-text {
+    font-size: clamp(18px, 5vw, 22px);
+    font-weight: 700;
+    line-height: 1.45;
+    color: #8a1f4a;
+    margin-bottom: 24px;
+  }
+
+  .modal-btn {
+    display: inline-block;
+    padding: 14px 28px;
+    border: none;
+    border-radius: 40px;
+    background: linear-gradient(135deg, #ff4d94 0%, #c42a6e 100%);
+    color: #fff;
+    font-family: inherit;
+    font-size: 15px;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    box-shadow: 0 5px 0 #7a1a44, 0 10px 25px rgba(255, 60, 140, 0.45);
+    transition: transform 0.1s;
+    touch-action: manipulation;
+    margin: 4px;
+  }
+
+  .modal-btn:active {
+    transform: translateY(3px);
+    box-shadow: 0 2px 0 #7a1a44, 0 4px 12px rgba(255, 60, 140, 0.45);
+  }
+
+  .modal-btn.secondary {
+    background: linear-gradient(135deg, #fff 0%, #ffe0ef 100%);
+    color: #8a1f4a;
+    box-shadow: 0 5px 0 #d4a0b8, 0 10px 25px rgba(0,0,0,0.15);
+  }
+
+  .modal-btn.secondary:active {
+    box-shadow: 0 2px 0 #d4a0b8, 0 4px 12px rgba(0,0,0,0.15);
+  }
+
+  /* Кнопка музыки */
+  .music-btn {
+    position: fixed;
+    top: 16px;
+    right: 16px;
+    z-index: 50;
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(255, 255, 255, 0.12);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    color: #fff;
+    font-size: 20px;
+    cursor: pointer;
+    box-shadow: 0 4px 20px rgba(255, 60, 140, 0.35);
+    transition: transform 0.2s, background 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    touch-action: manipulation;
+  }
+
+  .music-btn:active { transform: scale(0.92); }
+  .music-btn.playing { background: rgba(255, 100, 170, 0.35); }
+</style>
+</head>
+<body>
+
+  <div class="bg-blobs">
+    <div class="blob"></div>
+    <div class="blob"></div>
+    <div class="blob"></div>
+  </div>
+
+  <div class="hearts-layer" id="hearts"></div>
+
+  <button class="music-btn" id="musicBtn" title="Музыка">🔇</button>
+
+  <div class="container">
+    <div class="today" id="today"></div>
+
+    <div class="big-heart">💖</div>
+
+    <h1>Привет, моя<br>любимая 💕</h1>
+
+    <p class="daily" id="dailyPhrase"></p>
+
+    <button class="main-btn" id="openBtn">Открой, если скучаешь ✨</button>
+  </div>
+
+  <div class="footer-note">сделано с любовью для тебя</div>
+
+  <!-- Модальное окно -->
+  <div class="modal" id="modal">
+    <div class="modal-card">
+      <div class="modal-icon" id="modalIcon">💌</div>
+      <div class="modal-text" id="modalText"></div>
+      <div>
+        <button class="modal-btn" id="nextBtn">Ещё 💕</button>
+        <button class="modal-btn secondary" id="closeBtn">Закрыть</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+  /* ===== СЕрдечки ===== */
+  const heartsBox = document.getElementById('hearts');
+  const heartEmojis = ['💖','💕','🌸','✨','💗','💞','🩷','🌹'];
+  for (let i = 0; i < 25; i++) {
+    const h = document.createElement('div');
+    h.className = 'heart';
+    h.textContent = heartEmojis[Math.floor(Math.random() * heartEmojis.length)];
+    h.style.left = Math.random() * 100 + '%';
+    h.style.fontSize = (14 + Math.random() * 18) + 'px';
+    h.style.animationDuration = (8 + Math.random() * 8) + 's';
+    h.style.animationDelay = (-Math.random() * 12) + 's';
+    heartsBox.appendChild(h);
+  }
+
+  /* ===== Дата ===== */
+  const months = ['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
+  const weekdays = ['воскресенье','понедельник','вторник','среда','четверг','пятница','суббота'];
+  const now = new Date();
+  document.getElementById('today').textContent =
+    weekdays[now.getDay()] + ', ' + now.getDate() + ' ' + months[now.getMonth()];
+
+  /* ===== Комплименты ===== */
+  const compliments = [
+    { icon: '💖', text: 'Ты самая красивая, когда улыбаешься. Улыбнись ещё раз — я это вижу.' },
+    { icon: '🌸', text: 'Ты моя самая нежная и любимая. Каждое утро я думаю о тебе.' },
+    { icon: '✨', text: 'Знаешь, что самое лучшее в моём дне? Момент, когда я вижу тебя.' },
+    { icon: '🩷', text: 'Ты сияешь ярче всех звёзд на небе. И я не преувеличиваю.' },
+    { icon: '🌹', text: 'Ты самое тёплое, что случалось в моей жизни. Спасибо, что ты рядом.' },
+    { icon: '💞', text: 'С тобой даже обычный день становится особенным. Ты — волшебная.' },
+    { icon: '🌷', text: 'Твои глаза — моё любимое место на земле. Можно смотреть бесконечно.' },
+    { icon: '💗', text: 'Ты умная, красивая, добрая — и всё это одновременно в одном человеке. Это чудо.' },
+    { icon: '🦋', text: 'Ты умеешь делать даже скучное — весёлым. Ты мой источник радости.' },
+    { icon: '🌙', text: 'Даже в самый грустный день ты делаешь меня счастливым. Просто потому что ты есть.' },
+    { icon: '☀️', text: 'Ты моё утро. Моё солнце. Моя причина улыбаться в 7 утра.' },
+    { icon: '🧸', text: 'Мне очень повезло с тобой. Обнимаю тебя прямо сейчас, мысленно.' },
+    { icon: '🎀', text: 'Ты самая лучшая. Не спорь со мной, я знаю точно.' },
+    { icon: '🍀', text: 'С тобой мне легко и тепло. Ты мой дом.' },
+    { icon: '💐', text: 'Каждый день с тобой — подарок, который я не заслужил, но очень берегу.' },
+    { icon: '🌺', text: 'Ты самая красивая девушка. Даже когда ты злишься или грустишь — всё равно красивая.' },
+    { icon: '💫', text: 'Ты придумала смысл в моей жизни. Спасибо, что ты есть у меня.' },
+    { icon: '🐱', text: 'Моя котик, ты самое милое создание на этой планете. Люблю тебя.' },
+    { icon: '🍓', text: 'Ты слаще всего самого сладкого. И добрее всех добрых.' },
+    { icon: '🌼', text: 'Когда ты рядом — весь мир становится на свои места.' }
+  ];
+
+  /* ===== Фраза дня (по дате) ===== */
+  const startOfYear = new Date(now.getFullYear(), 0, 0);
+  const dayOfYear = Math.floor((now - startOfYear) / (1000 * 60 * 60 * 24));
+  const dailyIndex = dayOfYear % compliments.length;
+  const daily = compliments[dailyIndex];
+  document.getElementById('dailyPhrase').innerHTML =
+    '<strong>Фраза дня:</strong> ' + daily.text;
+
+  /* ===== Кнопка «Открой, если скучаешь» ===== */
+  const modal = document.getElementById('modal');
+  const modalIcon = document.getElementById('modalIcon');
+  const modalText = document.getElementById('modalText');
+  let lastIndex = -1;
+
+  function showRandomCompliment() {
+    let idx;
+    do {
+      idx = Math.floor(Math.random() * compliments.length);
+    } while (idx === lastIndex && compliments.length > 1);
+    lastIndex = idx;
+
+    const c = compliments[idx];
+    modalIcon.textContent = c.icon;
+    modalText.textContent = c.text;
+
+    // Перезапускаем анимацию иконки
+    modalIcon.style.animation = 'none';
+    void modalIcon.offsetWidth;
+    modalIcon.style.animation = 'pop 0.6s cubic-bezier(0.5, 1.6, 0.5, 1)';
+
+    modal.classList.add('show');
+  }
+
+  document.getElementById('openBtn').addEventListener('click', showRandomCompliment);
+  document.getElementById('nextBtn').addEventListener('click', showRandomCompliment);
+  document.getElementById('closeBtn').addEventListener('click', () => {
+    modal.classList.remove('show');
+  });
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) modal.classList.remove('show');
+  });
+
+  /* ===== МУЗЫКА (генерируется через Web Audio API) ===== */
+  let audioCtx = null;
+  let musicPlaying = false;
+  let musicLoopTimer = null;
+
+  const musicBtn = document.getElementById('musicBtn');
+
+  // Пентатоника — приятный мягкий лад
+  const scale = [261.63, 293.66, 329.63, 392.00, 440.00, 523.25, 587.33, 659.25, 783.99, 880.00];
+
+  function playNote(freq, time, duration = 2.5, gain = 0.08) {
+    const osc1 = audioCtx.createOscillator();
+    const osc2 = audioCtx.createOscillator();
+    const g = audioCtx.createGain();
+    const filter = audioCtx.createBiquadFilter();
+
+    filter.type = 'lowpass';
+    filter.frequency.value = 1200;
+
+    osc1.type = 'sine';
+    osc1.frequency.value = freq;
+
+    osc2.type = 'triangle';
+    osc2.frequency.value = freq * 2;
+    osc2.detune.value = 5;
+
+    g.gain.setValueAtTime(0, time);
+    g.gain.linearRampToValueAtTime(gain, time + 0.15);
+    g.gain.exponentialRampToValueAtTime(0.0001, time + duration);
+
+    osc1.connect(g);
+    osc2.connect(g);
+    g.connect(filter);
+    filter.connect(audioCtx.destination);
+
+    osc1.start(time);
+    osc2.start(time);
+    osc1.stop(time + duration);
+    osc2.stop(time + duration);
+  }
+
+  function scheduleLoop() {
+    const now = audioCtx.currentTime;
+    // Играем 3–4 случайные ноты
+    const notesCount = 3 + Math.floor(Math.random() * 2);
+    for (let i = 0; i < notesCount; i++) {
+      const freq = scale[Math.floor(Math.random() * scale.length)];
+      const startOffset = i * (0.6 + Math.random() * 0.8) + Math.random() * 0.3;
+      playNote(freq, now + startOffset, 2.5 + Math.random() * 1.5, 0.05 + Math.random() * 0.04);
+    }
+    // Следующая пачка через 4–6 секунд
+    musicLoopTimer = setTimeout(scheduleLoop, 4000 + Math.random() * 2500);
+  }
+
+  musicBtn.addEventListener('click', () => {
+    if (!audioCtx) {
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    if (audioCtx.state === 'suspended') {
+      audioCtx.resume();
+    }
+
+    if (musicPlaying) {
+      clearTimeout(musicLoopTimer);
+      musicPlaying = false;
+      musicBtn.textContent = '🔇';
+      musicBtn.classList.remove('playing');
+    } else {
+      musicPlaying = true;
+      musicBtn.textContent = '🎵';
+      musicBtn.classList.add('playing');
+      scheduleLoop();
+    }
+  });
+</script>
+</body>
+</html>
