@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>Секретик 💕</title>
 <style>
   * {
@@ -15,6 +15,8 @@
   html, body {
     height: 100%;
     overflow: hidden;
+    overscroll-behavior: none;
+    touch-action: none;
   }
 
   body {
@@ -26,18 +28,18 @@
     align-items: center;
     justify-content: center;
     user-select: none;
+    -webkit-user-select: none;
   }
 
-  /* ===== КРАСИВЫЙ АНИМИРОВАННЫЙ ФОН ===== */
-
-  /* Мягкие цветные пятна (aurora) */
+  /* ===== ФОН ===== */
   .bg-blobs {
     position: fixed;
     inset: 0;
     z-index: 0;
     overflow: hidden;
-    filter: blur(70px);
+    filter: blur(60px);
     opacity: 0.85;
+    will-change: transform;
   }
 
   .blob {
@@ -45,32 +47,13 @@
     border-radius: 50%;
     mix-blend-mode: screen;
     animation: float 18s ease-in-out infinite;
+    will-change: transform;
   }
 
-  .blob:nth-child(1) {
-    width: 55vmax; height: 55vmax;
-    background: #ff4d94;
-    top: -20%; left: -15%;
-    animation-delay: 0s;
-  }
-  .blob:nth-child(2) {
-    width: 50vmax; height: 50vmax;
-    background: #a24bff;
-    bottom: -25%; right: -15%;
-    animation-delay: -6s;
-  }
-  .blob:nth-child(3) {
-    width: 45vmax; height: 45vmax;
-    background: #ff8a5c;
-    top: 30%; left: 40%;
-    animation-delay: -12s;
-  }
-  .blob:nth-child(4) {
-    width: 40vmax; height: 40vmax;
-    background: #4ad4ff;
-    bottom: 10%; left: 5%;
-    animation-delay: -3s;
-  }
+  .blob:nth-child(1) { width: 55vmax; height: 55vmax; background: #ff4d94; top: -20%; left: -15%; }
+  .blob:nth-child(2) { width: 50vmax; height: 50vmax; background: #a24bff; bottom: -25%; right: -15%; animation-delay: -6s; }
+  .blob:nth-child(3) { width: 45vmax; height: 45vmax; background: #ff8a5c; top: 30%; left: 40%; animation-delay: -12s; }
+  .blob:nth-child(4) { width: 40vmax; height: 40vmax; background: #4ad4ff; bottom: 10%; left: 5%; animation-delay: -3s; }
 
   @keyframes float {
     0%, 100% { transform: translate(0, 0) scale(1); }
@@ -78,7 +61,6 @@
     66% { transform: translate(-6vw, 8vh) scale(0.9); }
   }
 
-  /* Лёгкая виньетка, чтобы центр читался */
   .bg-vignette {
     position: fixed;
     inset: 0;
@@ -87,7 +69,6 @@
     pointer-events: none;
   }
 
-  /* Мерцающие сердечки */
   .hearts {
     position: fixed;
     inset: 0;
@@ -98,28 +79,28 @@
 
   .heart {
     position: absolute;
-    font-size: 18px;
+    font-size: 16px;
     opacity: 0;
     animation: rise 9s linear infinite;
     filter: drop-shadow(0 0 6px rgba(255, 120, 180, 0.9));
+    will-change: transform, opacity;
   }
 
   @keyframes rise {
-    0%   { transform: translateY(0) scale(0.6) rotate(0deg); opacity: 0; }
+    0%   { transform: translateY(0) scale(0.6); opacity: 0; }
     15%  { opacity: 0.9; }
     85%  { opacity: 0.9; }
-    100% { transform: translateY(-110vh) scale(1.1) rotate(40deg); opacity: 0; }
+    100% { transform: translateY(-110vh) scale(1.1); opacity: 0; }
   }
 
   /* ===== КОНТЕНТ ===== */
-
   h1 {
     position: relative;
     z-index: 3;
     color: #fff;
-    font-size: clamp(22px, 6.5vw, 38px);
+    font-size: clamp(20px, 6vw, 34px);
     text-align: center;
-    margin-bottom: 28px;
+    margin-bottom: 20px;
     padding: 0 20px;
     font-weight: 800;
     letter-spacing: 1px;
@@ -138,19 +119,18 @@
   .stage {
     position: relative;
     z-index: 3;
-    width: min(90vw, 420px);
-    height: min(62vh, 500px);
-    border-radius: 30px;
+    width: min(92vw, 420px);
+    height: min(60vh, 480px);
+    border-radius: 28px;
     overflow: hidden;
-    /* Стеклянная рамка со свечением */
     border: 1px solid rgba(255, 255, 255, 0.35);
     box-shadow:
       0 0 0 1px rgba(255, 255, 255, 0.1),
       0 25px 60px rgba(120, 0, 80, 0.55),
       0 0 70px rgba(255, 90, 170, 0.45);
+    touch-action: none;
   }
 
-  /* Текст-сюрприз под защитой */
   .secret {
     position: absolute;
     inset: 0;
@@ -158,39 +138,30 @@
     align-items: center;
     justify-content: center;
     text-align: center;
-    padding: 30px;
-    background:
-      radial-gradient(circle at 30% 20%, #fff2f8 0%, #ffe0ef 45%, #ffcfe4 100%);
+    padding: 28px;
+    background: radial-gradient(circle at 30% 20%, #fff2f8 0%, #ffe0ef 45%, #ffcfe4 100%);
     color: #d6246e;
-    font-size: clamp(20px, 6vw, 30px);
+    font-size: clamp(20px, 6vw, 28px);
     font-weight: 800;
     line-height: 1.5;
     z-index: 1;
     text-shadow: 0 1px 0 #fff;
   }
 
-  .secret span {
-    animation: softGlow 3s ease-in-out infinite;
-  }
-
-  @keyframes softGlow {
-    0%, 100% { text-shadow: 0 1px 0 #fff, 0 0 18px rgba(255, 90, 160, 0.25); }
-    50%      { text-shadow: 0 1px 0 #fff, 0 0 30px rgba(255, 90, 160, 0.6); }
-  }
-
-  /* Слой для стирания */
   canvas {
     position: absolute;
     inset: 0;
     z-index: 2;
+    display: block;
     cursor: crosshair;
     touch-action: none;
+    -webkit-user-select: none;
+    user-select: none;
   }
 </style>
 </head>
 <body>
 
-  <!-- Красивый фон -->
   <div class="bg-blobs">
     <div class="blob"></div>
     <div class="blob"></div>
@@ -200,7 +171,6 @@
   <div class="bg-vignette"></div>
   <div class="hearts" id="hearts"></div>
 
-  <!-- Контент -->
   <h1>Сотри защиту 👆</h1>
 
   <div class="stage">
@@ -209,57 +179,69 @@
   </div>
 
 <script>
-  /* ===== ЛЕТЯЩИЕ СЕРДЕЧКИ ===== */
+  /* ===== Сердечки ===== */
   const heartsBox = document.getElementById('hearts');
-  const emojis = ['💖', '💕', '🌸', '✨', '💗', '🩷', '💞'];
-  for (let i = 0; i < 22; i++) {
+  const emojis = ['💖','💕','🌸','✨','💗'];
+  for (let i = 0; i < 16; i++) {
     const h = document.createElement('div');
     h.className = 'heart';
-    h.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+    h.textContent = emojis[i % emojis.length];
     h.style.left = Math.random() * 100 + '%';
     h.style.bottom = '-40px';
-    h.style.fontSize = (12 + Math.random() * 16) + 'px';
-    h.style.animationDuration = (7 + Math.random() * 8) + 's';
+    h.style.fontSize = (12 + Math.random() * 14) + 'px';
+    h.style.animationDuration = (8 + Math.random() * 7) + 's';
     h.style.animationDelay = (-Math.random() * 10) + 's';
     heartsBox.appendChild(h);
   }
 
-  /* ===== СТИРАНИЕ ===== */
+  /* ===== Стирание ===== */
   const canvas = document.getElementById('scratch');
-  const ctx = canvas.getContext('2d');
+  const ctx = canvas.getContext('2d', { alpha: true });
   const stage = canvas.parentElement;
 
-  let w, h, drawing = false, lastX = 0, lastY = 0;
+  let w = 0, h = 0;
+  let drawing = false;
+  let lastX = 0, lastY = 0;
   let revealed = false;
+  let dpr = 1;
+
+  // Очередь точек для отрисовки раз в кадр (rAF)
+  const queue = [];
+  let rafId = null;
+
+  // Счётчик стёртого (для проверки победы, без тяжёлого getImageData)
+  let scratchedPixels = 0;
+  let totalPixels = 1;
 
   function initCanvas() {
-    const dpr = window.devicePixelRatio || 1;
+    dpr = Math.min(window.devicePixelRatio || 1, 2); // ограничим 2 — чтобы не тормозил на retina
     w = stage.clientWidth;
     h = stage.clientHeight;
 
-    canvas.width = w * dpr;
-    canvas.height = h * dpr;
+    canvas.width = Math.floor(w * dpr);
+    canvas.height = Math.floor(h * dpr);
     canvas.style.width = w + 'px';
     canvas.style.height = h + 'px';
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-    // Переливающийся "голографический" слой защиты
+    totalPixels = w * h;
+
+    // Красивый защитный слой
     const grad = ctx.createLinearGradient(0, 0, w, h);
     grad.addColorStop(0,    '#2a1338');
     grad.addColorStop(0.25, '#5b2a7a');
     grad.addColorStop(0.5,  '#c04a9e');
     grad.addColorStop(0.75, '#5b2a7a');
     grad.addColorStop(1,    '#2a1338');
-
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, w, h);
 
-    // Мерцающие блики
-    ctx.globalAlpha = 0.25;
-    for (let i = 0; i < 30; i++) {
+    // Блики
+    ctx.globalAlpha = 0.22;
+    for (let i = 0; i < 20; i++) {
       const g2 = ctx.createRadialGradient(
         Math.random() * w, Math.random() * h, 0,
-        Math.random() * w, Math.random() * h, Math.random() * 80 + 20
+        Math.random() * w, Math.random() * h, Math.random() * 60 + 15
       );
       g2.addColorStop(0, 'rgba(255,255,255,0.9)');
       g2.addColorStop(1, 'rgba(255,255,255,0)');
@@ -268,35 +250,28 @@
     }
     ctx.globalAlpha = 1;
 
-    // Тонкая узорчатая сетка
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
+    // Узоры
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.07)';
     ctx.lineWidth = 1;
-    const step = 22;
+    const step = 24;
     for (let x = 0; x < w; x += step) {
-      ctx.beginPath();
-      ctx.moveTo(x, 0);
-      ctx.lineTo(x, h);
-      ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke();
     }
     for (let y = 0; y < h; y += step) {
-      ctx.beginPath();
-      ctx.moveTo(0, y);
-      ctx.lineTo(w, y);
-      ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
     }
 
-    // Центральная надпись
+    // Надпись
     ctx.fillStyle = 'rgba(255,255,255,0.92)';
-    ctx.font = 'bold 24px "Segoe UI", sans-serif';
+    ctx.font = 'bold ' + Math.round(Math.min(w, h) * 0.07) + 'px "Segoe UI", sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.shadowColor = 'rgba(255, 120, 200, 0.9)';
-    ctx.shadowBlur = 20;
+    ctx.shadowBlur = 18;
     ctx.fillText('СТЕРЕТЬ 👉', w / 2, h / 2);
     ctx.shadowBlur = 0;
 
-    // Пунктирная рамка-подсказка
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.35)';
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
     ctx.lineWidth = 2;
     ctx.setLineDash([10, 10]);
     ctx.strokeRect(14, 14, w - 28, h - 28);
@@ -304,87 +279,127 @@
 
     // Режим стирания
     ctx.globalCompositeOperation = 'destination-out';
-    ctx.lineWidth = 48;
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
   }
 
   function getPos(e) {
     const rect = canvas.getBoundingClientRect();
-    const touch = e.touches ? e.touches[0] : e;
+    const t = e.touches ? e.touches[0] : (e.changedTouches ? e.changedTouches[0] : e);
     return {
-      x: touch.clientX - rect.left,
-      y: touch.clientY - rect.top
+      x: t.clientX - rect.left,
+      y: t.clientY - rect.top
     };
   }
 
-  function scratch(pos) {
-    ctx.beginPath();
-    ctx.arc(pos.x, pos.y, 24, 0, Math.PI * 2);
-    ctx.fill();
+  // Размер кисти — чуть меньше на телефоне
+  function brushSize() {
+    return Math.max(20, Math.min(w, h) * 0.085);
+  }
 
-    if (lastX && lastY) {
+  function processQueue() {
+    rafId = null;
+    if (queue.length === 0) return;
+
+    const r = brushSize();
+    ctx.lineWidth = r;
+
+    while (queue.length) {
+      const p = queue.shift();
+
+      // Круг в точке (для одиночных тапов)
       ctx.beginPath();
-      ctx.moveTo(lastX, lastY);
-      ctx.lineTo(pos.x, pos.y);
-      ctx.stroke();
+      ctx.arc(p.x, p.y, r / 2, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Линия от прошлой точки — плавный след
+      if (p.px !== undefined) {
+        ctx.beginPath();
+        ctx.moveTo(p.px, p.py);
+        ctx.lineTo(p.x, p.y);
+        ctx.stroke();
+
+        // приблизительно считаем стёртую площадь
+        const dx = p.x - p.px;
+        const dy = p.y - p.py;
+        scratchedPixels += Math.sqrt(dx * dx + dy * dy) * r;
+      } else {
+        scratchedPixels += (r / 2) * (r / 2) * Math.PI;
+      }
     }
-    lastX = pos.x;
-    lastY = pos.y;
+
+    // Проверяем победу редко — не чаще 5 раз в секунду
+    maybeReveal();
+  }
+
+  let lastRevealCheck = 0;
+  function maybeReveal() {
+    if (revealed) return;
+    const now = performance.now();
+    if (now - lastRevealCheck < 200) return;
+    lastRevealCheck = now;
+
+    if (scratchedPixels / totalPixels > 0.5) {
+      revealed = true;
+      canvas.style.transition = 'opacity 0.8s ease';
+      canvas.style.opacity = '0';
+      setTimeout(() => { canvas.style.display = 'none'; }, 800);
+    }
   }
 
   function start(e) {
     e.preventDefault();
     drawing = true;
-    lastX = 0; lastY = 0;
-    scratch(getPos(e));
+    lastX = lastY = 0;
+    const pos = getPos(e);
+    queue.push({ x: pos.x, y: pos.y });
+    if (!rafId) rafId = requestAnimationFrame(processQueue);
   }
 
   function move(e) {
     if (!drawing) return;
     e.preventDefault();
-    scratch(getPos(e));
-    checkReveal();
+
+    const pos = getPos(e);
+    queue.push({
+      x: pos.x,
+      y: pos.y,
+      px: lastX,
+      py: lastY
+    });
+    lastX = pos.x;
+    lastY = pos.y;
+
+    if (!rafId) rafId = requestAnimationFrame(processQueue);
   }
 
   function end() {
     drawing = false;
-    lastX = 0; lastY = 0;
+    lastX = lastY = 0;
   }
 
-  function checkReveal() {
-    if (revealed) return;
-    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    const pixels = imageData.data;
-    let transparent = 0;
-    const total = pixels.length / 4;
-
-    for (let i = 3; i < pixels.length; i += 4 * 40) {
-      if (pixels[i] === 0) transparent++;
-    }
-
-    if (transparent / (total / 40) > 0.55) {
-      revealed = true;
-      canvas.style.transition = 'opacity 1s ease';
-      canvas.style.opacity = '0';
-      setTimeout(() => canvas.style.display = 'none', 1000);
-    }
-  }
-
+  // Mouse
   canvas.addEventListener('mousedown', start);
   canvas.addEventListener('mousemove', move);
   window.addEventListener('mouseup', end);
 
+  // Touch — passive: false только на canvas, минимально
   canvas.addEventListener('touchstart', start, { passive: false });
   canvas.addEventListener('touchmove', move, { passive: false });
   canvas.addEventListener('touchend', end);
+  canvas.addEventListener('touchcancel', end);
 
+  // Переинициализация при изменении размера/ориентации
+  let resizeTimer = null;
   window.addEventListener('resize', () => {
-    if (!revealed) {
+    if (revealed) return;
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => {
       ctx.setTransform(1, 0, 0, 1, 0, 0);
       ctx.clearRect(0, 0, canvas.width, canvas.height);
+      scratchedPixels = 0;
       initCanvas();
-    }
+    }, 200);
   });
 
   initCanvas();
