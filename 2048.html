@@ -1,0 +1,1386 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>2048 🎯</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  /* ===== ТЕМЫ ===== */
+  :root {
+    --bg-body: #0f0520;
+    --bg-glow1: #8b4eff;
+    --bg-glow2: #ff2e78;
+    --bg-glow3: #4a7cff;
+    --text-primary: #fff;
+    --text-secondary: #b8a0e0;
+    --panel-bg: rgba(255, 255, 255, 0.06);
+    --panel-border: rgba(255, 255, 255, 0.1);
+    --board-bg: rgba(255, 255, 255, 0.05);
+    --board-shadow: rgba(150, 80, 255, 0.15);
+    --cell-bg: rgba(255, 255, 255, 0.05);
+    --overlay-bg: rgba(15, 5, 32, 0.88);
+    --accent: #8b34ff;
+    --accent-dark: #3a0f7a;
+    --accent2: #ff4d94;
+    --accent2-dark: #7a1a44;
+    --gold: #ffd700;
+  }
+
+  body.theme-light {
+    --bg-body: #faf7f0;
+    --bg-glow1: #ffb8e0;
+    --bg-glow2: #ffd7a8;
+    --bg-glow3: #c8b8ff;
+    --text-primary: #4a1a6e;
+    --text-secondary: #8a6cb0;
+    --panel-bg: rgba(255, 255, 255, 0.7);
+    --panel-border: rgba(140, 100, 180, 0.15);
+    --board-bg: rgba(255, 255, 255, 0.8);
+    --board-shadow: rgba(180, 130, 220, 0.25);
+    --cell-bg: rgba(220, 200, 240, 0.4);
+    --overlay-bg: rgba(250, 247, 240, 0.95);
+    --accent: #8b34ff;
+    --accent-dark: #5b1cbd;
+    --accent2: #ff4d94;
+    --accent2-dark: #c42a6e;
+    --gold: #d4941a;
+  }
+
+  body.theme-neon {
+    --bg-body: #000308;
+    --bg-glow1: #00fff5;
+    --bg-glow2: #ff00e5;
+    --bg-glow3: #00ff88;
+    --text-primary: #00fff5;
+    --text-secondary: #00ff88;
+    --panel-bg: rgba(0, 255, 245, 0.05);
+    --panel-border: rgba(0, 255, 245, 0.35);
+    --board-bg: rgba(0, 255, 245, 0.03);
+    --board-shadow: rgba(0, 255, 245, 0.4);
+    --cell-bg: rgba(0, 255, 245, 0.08);
+    --overlay-bg: rgba(0, 3, 8, 0.92);
+    --accent: #00fff5;
+    --accent-dark: #008b85;
+    --accent2: #ff00e5;
+    --accent2-dark: #8b0078;
+    --gold: #ffea00;
+  }
+
+  html, body {
+    height: 100%;
+    overflow: hidden;
+    font-family: 'Segoe UI', -apple-system, sans-serif;
+    background: var(--bg-body);
+    transition: background 0.4s ease;
+  }
+
+  body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 12px;
+    user-select: none;
+    -webkit-user-select: none;
+    position: relative;
+    overflow: hidden;
+    color: var(--text-primary);
+  }
+
+  /* Фон */
+  .bg-glow {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    overflow: hidden;
+  }
+
+  .glow {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(90px);
+    opacity: 0.4;
+    animation: drift 25s ease-in-out infinite;
+    transition: background 0.4s;
+  }
+
+  .glow:nth-child(1) { width: 55vmax; height: 55vmax; background: var(--bg-glow1); top: -20%; left: -20%; }
+  .glow:nth-child(2) { width: 50vmax; height: 50vmax; background: var(--bg-glow2); bottom: -25%; right: -15%; animation-delay: -8s; }
+  .glow:nth-child(3) { width: 40vmax; height: 40vmax; background: var(--bg-glow3); top: 40%; left: 45%; animation-delay: -16s; }
+
+  @keyframes drift {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    50%      { transform: translate(8vw, -6vh) scale(1.15); }
+  }
+
+  /* Контейнер */
+  .game {
+    position: relative;
+    z-index: 3;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+    max-width: 460px;
+    animation: fadeIn 0.6s ease;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: scale(0.96); }
+    to   { opacity: 1; transform: scale(1); }
+  }
+
+  /* Шапка */
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+
+  h1 {
+    font-size: clamp(24px, 6.5vw, 34px);
+    font-weight: 900;
+    letter-spacing: -1px;
+    background: linear-gradient(135deg, var(--text-primary) 0%, var(--accent2) 50%, var(--accent) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    filter: drop-shadow(0 2px 14px var(--board-shadow));
+    line-height: 1;
+  }
+
+  .mode-badge {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    padding: 4px 10px;
+    border-radius: 20px;
+    background: linear-gradient(135deg, var(--accent2) 0%, var(--accent) 100%);
+    color: #fff;
+    margin-left: 8px;
+    vertical-align: middle;
+    box-shadow: 0 4px 12px var(--board-shadow);
+    display: none;
+  }
+
+  .mode-badge.show { display: inline-block; }
+
+  .scores {
+    display: flex;
+    gap: 6px;
+  }
+
+  .score-box {
+    padding: 6px 10px;
+    border-radius: 12px;
+    background: var(--panel-bg);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1.5px solid var(--panel-border);
+    text-align: center;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+    min-width: 62px;
+  }
+
+  .score-label {
+    font-size: 8px;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    font-weight: 700;
+    margin-bottom: 1px;
+  }
+
+  .score-value {
+    font-size: 17px;
+    font-weight: 900;
+    color: var(--text-primary);
+    line-height: 1.1;
+    transition: transform 0.2s ease, color 0.2s;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .score-value.bump {
+    transform: scale(1.25);
+    color: var(--gold);
+  }
+
+  /* Тулбар */
+  .toolbar {
+    display: flex;
+    gap: 6px;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .icon-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    border: 1.5px solid var(--panel-border);
+    background: var(--panel-bg);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    color: var(--text-primary);
+    font-size: 17px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    transition: transform 0.15s, background 0.2s;
+    touch-action: manipulation;
+    -webkit-appearance: none;
+  }
+
+  .icon-btn:active { transform: scale(0.92); }
+  .icon-btn.active { background: var(--accent); border-color: var(--accent); }
+  .icon-btn.off { opacity: 0.4; }
+
+  .size-group {
+    display: flex;
+    gap: 4px;
+    padding: 3px;
+    border-radius: 12px;
+    background: var(--panel-bg);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1.5px solid var(--panel-border);
+  }
+
+  .size-btn {
+    padding: 6px 10px;
+    border: none;
+    border-radius: 9px;
+    background: transparent;
+    color: var(--text-secondary);
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 800;
+    cursor: pointer;
+    transition: all 0.2s;
+    touch-action: manipulation;
+    -webkit-appearance: none;
+  }
+
+  .size-btn.active {
+    background: var(--accent);
+    color: #fff;
+  }
+
+  .subtitle {
+    font-size: 11px;
+    color: var(--text-secondary);
+    text-align: center;
+    letter-spacing: 0.3px;
+    line-height: 1.4;
+    padding: 0 6px;
+    opacity: 0.9;
+  }
+
+  /* Игровое поле */
+  .board-wrap {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    border-radius: 20px;
+    overflow: hidden;
+  }
+
+  .board {
+    position: absolute;
+    inset: 0;
+    background: var(--board-bg);
+    border-radius: 20px;
+    box-shadow:
+      0 0 0 1.5px var(--panel-border),
+      0 20px 50px rgba(0, 0, 0, 0.4),
+      0 0 60px var(--board-shadow);
+    touch-action: none;
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+  }
+
+  .cells {
+    position: absolute;
+    inset: var(--pad, 12px);
+    display: grid;
+    gap: var(--gap, 10px);
+    pointer-events: none;
+  }
+
+  .cell {
+    background: var(--cell-bg);
+    border-radius: 12px;
+    transition: background 0.3s;
+  }
+
+  .tiles {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+
+  .tile {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: var(--cell, 60px);
+    height: var(--cell, 60px);
+    transition: transform 0.15s ease;
+    will-change: transform;
+  }
+
+  .tile-inner {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
+    font-weight: 800;
+    font-size: calc(var(--cell, 60px) * 0.4);
+    letter-spacing: -1px;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.25), 0 4px 12px rgba(0,0,0,0.15);
+    font-variant-numeric: tabular-nums;
+    transition: background 0.3s;
+  }
+
+  .tile.spawn .tile-inner {
+    animation: tileSpawn 0.2s cubic-bezier(0.5, 1.6, 0.5, 1);
+  }
+
+  @keyframes tileSpawn {
+    0%   { transform: scale(0); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+
+  .tile.merge .tile-inner {
+    animation: tileMerge 0.24s ease-out;
+  }
+
+  @keyframes tileMerge {
+    0%   { transform: scale(1); }
+    50%  { transform: scale(1.22); filter: brightness(1.3); }
+    100% { transform: scale(1); }
+  }
+
+  /* Цвета плиток */
+  .tile[data-value="2"]    .tile-inner { background: #f5e6ff; color: #4a1a6e; }
+  .tile[data-value="4"]    .tile-inner { background: #e8d0ff; color: #4a1a6e; }
+  .tile[data-value="8"]    .tile-inner { background: #d4a8ff; color: #fff; }
+  .tile[data-value="16"]   .tile-inner { background: #bb82ff; color: #fff; }
+  .tile[data-value="32"]   .tile-inner { background: #a45bff; color: #fff; }
+  .tile[data-value="64"]   .tile-inner { background: #8b34ff; color: #fff; }
+  .tile[data-value="128"]  .tile-inner { background: #ff6bb0; color: #fff; font-size: calc(var(--cell, 60px) * 0.32); }
+  .tile[data-value="256"]  .tile-inner { background: #ff4499; color: #fff; font-size: calc(var(--cell, 60px) * 0.32); }
+  .tile[data-value="512"]  .tile-inner { background: #ff1f82; color: #fff; font-size: calc(var(--cell, 60px) * 0.32); }
+  .tile[data-value="1024"] .tile-inner { background: #ff006b; color: #fff; font-size: calc(var(--cell, 60px) * 0.26); box-shadow: inset 0 1px 0 rgba(255,255,255,0.25), 0 0 25px rgba(255, 0, 100, 0.7); }
+  .tile[data-value="2048"] .tile-inner { background: linear-gradient(135deg, #ffd700, #ff9500); color: #4a1a00; font-size: calc(var(--cell, 60px) * 0.26); box-shadow: inset 0 1px 0 rgba(255,255,255,0.5), 0 0 40px rgba(255, 200, 0, 0.9); animation: goldPulse 1.5s ease-in-out infinite; }
+  .tile[data-value="4096"] .tile-inner,
+  .tile[data-value="8192"] .tile-inner,
+  .tile[data-value="16384"].tile-inner,
+  .tile[data-value="32768"].tile-inner { background: linear-gradient(135deg, #2e0a5a, #8b34ff); color: #ffd700; font-size: calc(var(--cell, 60px) * 0.22); box-shadow: 0 0 30px rgba(200, 100, 255, 0.8); }
+
+  @keyframes goldPulse {
+    0%, 100% { filter: brightness(1); }
+    50%      { filter: brightness(1.15); }
+  }
+
+  /* Тема neon — плитки перекрываются неоновым свечением */
+  body.theme-neon .tile-inner {
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.15), 0 0 15px currentColor;
+    text-shadow: 0 0 8px currentColor;
+  }
+
+  /* Кнопки управления */
+  .controls {
+    display: flex;
+    gap: 8px;
+    width: 100%;
+  }
+
+  .ctrl-btn {
+    flex: 1;
+    padding: 12px;
+    border: none;
+    border-radius: 14px;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 800;
+    letter-spacing: 0.4px;
+    cursor: pointer;
+    transition: transform 0.1s, box-shadow 0.1s, opacity 0.2s;
+    touch-action: manipulation;
+    -webkit-appearance: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+  }
+
+  .ctrl-btn.primary {
+    background: linear-gradient(135deg, var(--accent) 0%, var(--accent-dark) 100%);
+    color: #fff;
+    box-shadow: 0 5px 0 var(--accent-dark), 0 10px 25px var(--board-shadow);
+  }
+
+  .ctrl-btn.primary:active {
+    transform: translateY(3px);
+    box-shadow: 0 2px 0 var(--accent-dark), 0 5px 12px var(--board-shadow);
+  }
+
+  .ctrl-btn.undo {
+    background: var(--panel-bg);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    color: var(--text-primary);
+    border: 1.5px solid var(--panel-border);
+    box-shadow: 0 5px 0 rgba(0, 0, 0, 0.2), 0 10px 22px rgba(0, 0, 0, 0.15);
+  }
+
+  .ctrl-btn.undo:active {
+    transform: translateY(3px);
+    box-shadow: 0 2px 0 rgba(0, 0, 0, 0.2), 0 4px 10px rgba(0, 0, 0, 0.15);
+  }
+
+  .ctrl-btn:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+    transform: none !important;
+  }
+
+  /* Оверлей */
+  .overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 10;
+    background: var(--overlay-bg);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.35s ease, visibility 0.35s;
+    text-align: center;
+    border-radius: 20px;
+  }
+
+  .overlay.show {
+    opacity: 1;
+    visibility: visible;
+  }
+
+  .overlay-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    animation: overlayIn 0.4s cubic-bezier(0.5, 1.6, 0.5, 1);
+  }
+
+  @keyframes overlayIn {
+    from { transform: scale(0.85); opacity: 0; }
+    to   { transform: scale(1); opacity: 1; }
+  }
+
+  .overlay-emoji {
+    font-size: 58px;
+    line-height: 1;
+    filter: drop-shadow(0 0 25px var(--gold));
+  }
+
+  .overlay-title {
+    font-size: 24px;
+    font-weight: 900;
+    color: var(--text-primary);
+    letter-spacing: 0.5px;
+  }
+
+  .overlay-text {
+    font-size: 13px;
+    color: var(--text-secondary);
+    line-height: 1.5;
+    max-width: 240px;
+  }
+
+  .overlay-buttons {
+    display: flex;
+    gap: 8px;
+    margin-top: 6px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .overlay-btn {
+    padding: 11px 22px;
+    border: none;
+    border-radius: 40px;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    transition: transform 0.1s;
+    touch-action: manipulation;
+    -webkit-appearance: none;
+  }
+
+  .overlay-btn.primary {
+    background: linear-gradient(135deg, var(--accent2) 0%, var(--accent2-dark) 100%);
+    color: #fff;
+    box-shadow: 0 5px 0 var(--accent2-dark), 0 10px 25px rgba(255, 60, 140, 0.4);
+  }
+
+  .overlay-btn.secondary {
+    background: var(--panel-bg);
+    color: var(--text-primary);
+    border: 1.5px solid var(--panel-border);
+    box-shadow: 0 5px 0 rgba(0, 0, 0, 0.25);
+  }
+
+  .overlay-btn:active { transform: translateY(3px); }
+  .overlay-btn.primary:active { box-shadow: 0 2px 0 var(--accent2-dark), 0 4px 12px rgba(255, 60, 140, 0.4); }
+  .overlay-btn.secondary:active { box-shadow: 0 2px 0 rgba(0, 0, 0, 0.25); }
+
+  /* Уменьшаем на низких экранах */
+  @media (max-height: 760px) {
+    .subtitle { display: none; }
+    .game { gap: 8px; }
+    .icon-btn { width: 36px; height: 36px; font-size: 15px; }
+  }
+</style>
+</head>
+<body class="theme-dark">
+
+  <div class="bg-glow">
+    <div class="glow"></div>
+    <div class="glow"></div>
+    <div class="glow"></div>
+  </div>
+
+  <div class="game" id="game">
+
+    <div class="header">
+      <h1>2048<span class="mode-badge" id="modeBadge">🎯 День</span></h1>
+      <div class="scores">
+        <div class="score-box">
+          <div class="score-label">Счёт</div>
+          <div class="score-value" id="scoreEl">0</div>
+        </div>
+        <div class="score-box">
+          <div class="score-label">Рекорд</div>
+          <div class="score-value" id="highScoreEl">0</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="toolbar">
+      <button class="icon-btn" id="themeBtn" title="Тема">🎨</button>
+      <button class="icon-btn" id="soundBtn" title="Звук">🔊</button>
+      <div class="size-group" id="sizeGroup">
+        <button class="size-btn active" data-size="4">4×4</button>
+        <button class="size-btn" data-size="5">5×5</button>
+        <button class="size-btn" data-size="6">6×6</button>
+      </div>
+      <button class="icon-btn" id="dailyBtn" title="Ежедневный вызов">🎯</button>
+    </div>
+
+    <p class="subtitle" id="subtitle">
+      Свайпай или стрелками собирай плитки и достигни 2048
+    </p>
+
+    <div class="board-wrap">
+      <div class="board" id="board">
+        <div class="cells" id="cells"></div>
+        <div class="tiles" id="tiles"></div>
+        <div class="overlay" id="overlay">
+          <div class="overlay-content">
+            <div class="overlay-emoji" id="overlayEmoji">🎉</div>
+            <div class="overlay-title" id="overlayTitle">Победа!</div>
+            <div class="overlay-text" id="overlayText"></div>
+            <div class="overlay-buttons" id="overlayButtons"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="controls">
+      <button class="ctrl-btn undo" id="undoBtn" disabled>↶ Отменить</button>
+      <button class="ctrl-btn primary" id="newGameBtn">🔄 Новая игра</button>
+    </div>
+
+  </div>
+
+<script>
+  /* ==========================================================
+     КОНСТАНТЫ
+     ========================================================== */
+  const STORAGE_HIGH = 'g2048_high_';
+  const STORAGE_THEME = 'g2048_theme';
+  const STORAGE_SOUND = 'g2048_sound';
+  const STORAGE_SIZE = 'g2048_size';
+  const STORAGE_DAILY_BEST = 'g2048_daily_best_';
+  const MAX_HISTORY = 5;
+
+  /* ==========================================================
+     DOM
+     ========================================================== */
+  const gameEl = document.getElementById('game');
+  const boardEl = document.getElementById('board');
+  const cellsEl = document.getElementById('cells');
+  const tilesEl = document.getElementById('tiles');
+  const scoreEl = document.getElementById('scoreEl');
+  const highScoreEl = document.getElementById('highScoreEl');
+  const overlayEl = document.getElementById('overlay');
+  const overlayEmoji = document.getElementById('overlayEmoji');
+  const overlayTitle = document.getElementById('overlayTitle');
+  const overlayText = document.getElementById('overlayText');
+  const overlayButtons = document.getElementById('overlayButtons');
+  const newGameBtn = document.getElementById('newGameBtn');
+  const undoBtn = document.getElementById('undoBtn');
+  const themeBtn = document.getElementById('themeBtn');
+  const soundBtn = document.getElementById('soundBtn');
+  const dailyBtn = document.getElementById('dailyBtn');
+  const sizeGroup = document.getElementById('sizeGroup');
+  const modeBadge = document.getElementById('modeBadge');
+  const subtitleEl = document.getElementById('subtitle');
+
+  /* ==========================================================
+     СОСТОЯНИЕ
+     ========================================================== */
+  let SIZE = 4;
+  let grid = [];
+  let tiles = new Map();
+  let nextId = 1;
+  let score = 0;
+  let highScore = 0;
+  let busy = false;
+  let gameEnded = false;
+  let won = false;
+  let history = []; // стек для undo
+  let dailyMode = false;
+  let rng = Math.random; // можно заменить на seeded
+
+  let cellSize = 60;
+  let gapSize = 10;
+  let padSize = 12;
+
+  let theme = localStorage.getItem(STORAGE_THEME) || 'dark';
+  let soundEnabled = localStorage.getItem(STORAGE_SOUND) !== 'false';
+
+  /* ==========================================================
+     ЗВУК (Web Audio API)
+     ========================================================== */
+  let audioCtx = null;
+
+  function initAudio() {
+    if (!audioCtx) {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return null;
+      audioCtx = new AC();
+    }
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    return audioCtx;
+  }
+
+  function beep(freq, duration, type, gain, delay) {
+    if (!soundEnabled) return;
+    const ctx = initAudio();
+    if (!ctx) return;
+    const t0 = ctx.currentTime + (delay || 0);
+    const osc = ctx.createOscillator();
+    const g = ctx.createGain();
+    osc.type = type || 'sine';
+    osc.frequency.value = freq;
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.linearRampToValueAtTime(gain || 0.05, t0 + 0.01);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + duration);
+    osc.connect(g);
+    g.connect(ctx.destination);
+    osc.start(t0);
+    osc.stop(t0 + duration + 0.05);
+  }
+
+  function soundMove() {
+    beep(180, 0.05, 'sine', 0.02);
+  }
+
+  function soundMerge() {
+    beep(440, 0.09, 'triangle', 0.05);
+    beep(660, 0.08, 'sine', 0.03, 0.03);
+  }
+
+  function soundWin() {
+    [523, 659, 784, 1047].forEach((f, i) => {
+      beep(f, 0.35, 'sine', 0.07, i * 0.1);
+    });
+  }
+
+  function soundLose() {
+    [400, 320, 240, 180].forEach((f, i) => {
+      beep(f, 0.28, 'triangle', 0.05, i * 0.1);
+    });
+  }
+
+  function soundUndo() {
+    beep(500, 0.08, 'sine', 0.04);
+    beep(300, 0.1, 'sine', 0.03, 0.05);
+  }
+
+  // Разблокировка аудио при первом тапе
+  function unlockAudio() {
+    initAudio();
+  }
+  document.addEventListener('touchstart', unlockAudio, { passive: true, once: true });
+  document.addEventListener('click', unlockAudio, { once: true });
+
+  /* ==========================================================
+     SEEDED RANDOM (для ежедневного режима)
+     ========================================================== */
+  function mulberry32(seed) {
+    return function() {
+      let t = seed += 0x6D2B79F5;
+      t = Math.imul(t ^ t >>> 15, t | 1);
+      t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    };
+  }
+
+  function seedFromDate(str) {
+    let h = 2166136261;
+    for (let i = 0; i < str.length; i++) {
+      h ^= str.charCodeAt(i);
+      h = Math.imul(h, 16777619);
+    }
+    return h >>> 0;
+  }
+
+  function todayKey() {
+    const d = new Date();
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    return d.getFullYear() + '-' + mm + '-' + dd;
+  }
+
+  /* ==========================================================
+     УТИЛИТЫ
+     ========================================================== */
+  function emptyGrid(size) {
+    return Array.from({ length: size }, () => Array(size).fill(null));
+  }
+
+  function sleep(ms) {
+    return new Promise(res => setTimeout(res, ms));
+  }
+
+  function bumpElement(el) {
+    el.classList.remove('bump');
+    void el.offsetWidth;
+    el.classList.add('bump');
+    setTimeout(() => el.classList.remove('bump'), 260);
+  }
+
+  function vibrate(pattern) {
+    if (navigator.vibrate) {
+      try { navigator.vibrate(pattern); } catch(e) {}
+    }
+  }
+
+  /* ==========================================================
+     РАЗМЕТКА
+     ========================================================== */
+  function fit() {
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    const maxW = vw - 24;
+    const maxH = vh - 240;
+    const size = Math.max(260, Math.min(maxW, maxH, 460));
+    gameEl.style.maxWidth = size + 'px';
+    layout();
+  }
+
+  function layout() {
+    const boardW = boardEl.clientWidth;
+    padSize = boardW * 0.028;
+    gapSize = boardW * (SIZE === 4 ? 0.025 : SIZE === 5 ? 0.022 : 0.018);
+    cellSize = (boardW - padSize * 2 - gapSize * (SIZE - 1)) / SIZE;
+
+    boardEl.style.setProperty('--pad', padSize + 'px');
+    boardEl.style.setProperty('--gap', gapSize + 'px');
+    boardEl.style.setProperty('--cell', cellSize + 'px');
+
+    tiles.forEach(t => positionTile(t));
+  }
+
+  function positionTile(t) {
+    if (!t.el) return;
+    const x = padSize + t.x * (cellSize + gapSize);
+    const y = padSize + t.y * (cellSize + gapSize);
+    t.el.style.transform = `translate(${x}px, ${y}px)`;
+  }
+
+  /* ==========================================================
+     СОЗДАНИЕ ЭЛЕМЕНТОВ
+     ========================================================== */
+  function buildCells() {
+    cellsEl.innerHTML = '';
+    cellsEl.style.gridTemplateColumns = `repeat(${SIZE}, 1fr)`;
+    cellsEl.style.gridTemplateRows = `repeat(${SIZE}, 1fr)`;
+    for (let i = 0; i < SIZE * SIZE; i++) {
+      const c = document.createElement('div');
+      c.className = 'cell';
+      cellsEl.appendChild(c);
+    }
+  }
+
+  function renderTileElement(t, animation) {
+    const el = document.createElement('div');
+    el.className = 'tile';
+    el.dataset.value = t.value;
+
+    const inner = document.createElement('div');
+    inner.className = 'tile-inner';
+    inner.textContent = t.value;
+    el.appendChild(inner);
+
+    if (animation === 'spawn') el.classList.add('spawn');
+    else if (animation === 'merge') el.classList.add('merge');
+
+    t.el = el;
+    tilesEl.appendChild(el);
+    positionTile(t);
+  }
+
+  function spawnRandomTile() {
+    const empties = [];
+    for (let y = 0; y < SIZE; y++) {
+      for (let x = 0; x < SIZE; x++) {
+        if (!grid[y][x]) empties.push([x, y]);
+      }
+    }
+    if (empties.length === 0) return null;
+
+    const idx = Math.floor(rng() * empties.length);
+    const [x, y] = empties[idx];
+    const value = rng() < 0.9 ? 2 : 4;
+    const tile = { id: nextId++, value, x, y };
+
+    grid[y][x] = tile;
+    tiles.set(tile.id, tile);
+    renderTileElement(tile, 'spawn');
+    return tile;
+  }
+
+  /* ==========================================================
+     ХРАНИЛИЩЕ РЕКОРДОВ
+     ========================================================== */
+  function getHighScoreKey() {
+    if (dailyMode) return STORAGE_DAILY_BEST + todayKey() + '_' + SIZE;
+    return STORAGE_HIGH + SIZE;
+  }
+
+  function loadHighScore() {
+    highScore = parseInt(localStorage.getItem(getHighScoreKey()) || '0', 10);
+    highScoreEl.textContent = highScore;
+  }
+
+  function saveHighScore() {
+    if (score > highScore) {
+      highScore = score;
+      localStorage.setItem(getHighScoreKey(), String(highScore));
+      highScoreEl.textContent = highScore;
+    }
+  }
+
+  /* ==========================================================
+     ИСТОРИЯ (undo)
+     ========================================================== */
+  function snapshotState() {
+    const snapshot = {
+      score: score,
+      tiles: []
+    };
+    grid.forEach(row => row.forEach(t => {
+      if (t) snapshot.tiles.push({ value: t.value, x: t.x, y: t.y });
+    }));
+    return snapshot;
+  }
+
+  function pushHistory() {
+    history.push(snapshotState());
+    if (history.length > MAX_HISTORY) history.shift();
+    updateUndoButton();
+  }
+
+  function popHistory() {
+    if (history.length === 0) return false;
+    const s = history.pop();
+    restoreState(s);
+    updateUndoButton();
+    return true;
+  }
+
+  function restoreState(s) {
+    // Очищаем
+    tilesEl.innerHTML = '';
+    tiles.clear();
+    grid = emptyGrid(SIZE);
+    nextId = 1;
+    score = s.score;
+    scoreEl.textContent = score;
+    gameEnded = false;
+    busy = false;
+    hideOverlay();
+
+    // Восстанавливаем плитки
+    s.tiles.forEach(tData => {
+      const tile = { id: nextId++, value: tData.value, x: tData.x, y: tData.y };
+      grid[tData.y][tData.x] = tile;
+      tiles.set(tile.id, tile);
+      renderTileElement(tile, 'spawn');
+    });
+  }
+
+  function updateUndoButton() {
+    undoBtn.disabled = history.length === 0 || gameEnded || busy;
+  }
+
+  /* ==========================================================
+     НОВАЯ ИГРА
+     ========================================================== */
+  function newGame() {
+    // Определяем RNG
+    if (dailyMode) {
+      rng = mulberry32(seedFromDate(todayKey() + '_' + SIZE));
+    } else {
+      rng = Math.random;
+    }
+
+    tilesEl.innerHTML = '';
+    tiles.clear();
+    grid = emptyGrid(SIZE);
+    nextId = 1;
+    score = 0;
+    scoreEl.textContent = '0';
+    history = [];
+    gameEnded = false;
+    won = false;
+    busy = false;
+
+    loadHighScore();
+    hideOverlay();
+    updateUndoButton();
+
+    spawnRandomTile();
+    spawnRandomTile();
+
+    // Обновляем режимную метку
+    modeBadge.classList.toggle('show', dailyMode);
+    subtitleEl.textContent = dailyMode
+      ? '🎯 Ежедневный вызов — одинаковый старт для всех на сегодня'
+      : 'Свайпай или стрелками собирай плитки и достигни 2048';
+  }
+
+  /* ==========================================================
+     ХОД
+     ========================================================== */
+  async function move(dir) {
+    if (busy || gameEnded) return;
+    busy = true;
+
+    const vectors = {
+      up:    [0, -1],
+      down:  [0, 1],
+      left:  [-1, 0],
+      right: [1, 0]
+    };
+    const [vx, vy] = vectors[dir];
+
+    // Порядок обхода
+    const order = [];
+    if (dir === 'right') {
+      for (let y = 0; y < SIZE; y++) for (let x = SIZE - 1; x >= 0; x--) order.push([x, y]);
+    } else if (dir === 'left') {
+      for (let y = 0; y < SIZE; y++) for (let x = 0; x < SIZE; x++) order.push([x, y]);
+    } else if (dir === 'down') {
+      for (let x = 0; x < SIZE; x++) for (let y = SIZE - 1; y >= 0; y--) order.push([x, y]);
+    } else {
+      for (let x = 0; x < SIZE; x++) for (let y = 0; y < SIZE; y++) order.push([x, y]);
+    }
+
+    const newGrid = emptyGrid(SIZE);
+    const mergedIds = new Set();
+    const toRemove = [];
+    const toCreate = [];
+    let moved = false;
+    let scoreGain = 0;
+    let mergedCount = 0;
+
+    for (const [x, y] of order) {
+      const tile = grid[y][x];
+      if (!tile) continue;
+
+      let nx = x, ny = y;
+
+      while (true) {
+        const tx = nx + vx, ty = ny + vy;
+        if (tx < 0 || tx >= SIZE || ty < 0 || ty >= SIZE) break;
+
+        const other = newGrid[ty][tx];
+        if (!other) { nx = tx; ny = ty; continue; }
+        if (other.value === tile.value && !mergedIds.has(other.id)) {
+          nx = tx; ny = ty;
+          break;
+        }
+        break;
+      }
+
+      const target = newGrid[ny][nx];
+
+      if (target && target.value === tile.value && !mergedIds.has(target.id)) {
+        mergedIds.add(target.id);
+        mergedIds.add(tile.id);
+
+        const merged = { id: nextId++, value: tile.value * 2, x: nx, y: ny };
+        newGrid[ny][nx] = merged;
+        scoreGain += merged.value;
+        mergedCount++;
+
+        tile.x = nx; tile.y = ny;
+        target.x = nx; target.y = ny;
+        toRemove.push(tile, target);
+        toCreate.push(merged);
+        moved = true;
+      } else {
+        if (nx !== x || ny !== y) moved = true;
+        tile.x = nx; tile.y = ny;
+        newGrid[ny][nx] = tile;
+      }
+    }
+
+    if (!moved) {
+      busy = false;
+      return;
+    }
+
+    // Снимок ДО изменений — для undo
+    pushHistory();
+
+    // Сдвиг всех плиток
+    tiles.forEach(t => positionTile(t));
+    soundMove();
+
+    await sleep(160);
+
+    // Удаляем старые
+    toRemove.forEach(t => {
+      if (t.el && t.el.parentNode) t.el.remove();
+      tiles.delete(t.id);
+    });
+
+    // Создаём новые
+    toCreate.forEach(t => {
+      tiles.set(t.id, t);
+      renderTileElement(t, 'merge');
+    });
+
+    if (mergedCount > 0) {
+      soundMerge();
+      vibrate(10);
+    }
+
+    grid = newGrid;
+
+    if (scoreGain > 0) {
+      score += scoreGain;
+      scoreEl.textContent = score;
+      bumpElement(scoreEl);
+      saveHighScore();
+    }
+
+    spawnRandomTile();
+
+    busy = false;
+
+    // Победа?
+    if (!won && grid.flat().some(t => t && t.value >= 2048)) {
+      won = true;
+      soundWin();
+      vibrate([60, 40, 60, 40, 100]);
+      showWin();
+      updateUndoButton();
+      return;
+    }
+
+    // Нет ходов?
+    if (!hasMoves()) {
+      gameEnded = true;
+      soundLose();
+      vibrate([50, 40, 50, 40, 100]);
+      showGameOver();
+    }
+
+    updateUndoButton();
+  }
+
+  /* ==========================================================
+     ПРОВЕРКА ХОДОВ
+     ========================================================== */
+  function hasMoves() {
+    for (let y = 0; y < SIZE; y++) {
+      for (let x = 0; x < SIZE; x++) {
+        if (!grid[y][x]) return true;
+      }
+    }
+    for (let y = 0; y < SIZE; y++) {
+      for (let x = 0; x < SIZE; x++) {
+        const t = grid[y][x];
+        if (!t) continue;
+        if (x < SIZE - 1 && grid[y][x + 1] && grid[y][x + 1].value === t.value) return true;
+        if (y < SIZE - 1 && grid[y + 1][x] && grid[y + 1][x].value === t.value) return true;
+      }
+    }
+    return false;
+  }
+
+  /* ==========================================================
+     ОВЕРЛЕИ
+     ========================================================== */
+  function showWin() {
+    overlayEmoji.textContent = '🏆';
+    overlayTitle.textContent = 'Победа!';
+    let extra = '';
+    if (dailyMode) {
+      const best = localStorage.getItem(STORAGE_DAILY_BEST + todayKey() + '_' + SIZE);
+      extra = '<br>Лучший результат дня: <strong style="color:var(--gold)">' + (best || score) + '</strong>';
+    }
+    overlayText.innerHTML = 'Ты собрала <strong style="color:var(--gold)">2048</strong>!<br>Счёт: ' + score + extra;
+
+    overlayButtons.innerHTML = '';
+    const contBtn = document.createElement('button');
+    contBtn.className = 'overlay-btn secondary';
+    contBtn.textContent = 'Продолжить';
+    contBtn.onclick = () => hideOverlay();
+
+    const newBtn = document.createElement('button');
+    newBtn.className = 'overlay-btn primary';
+    newBtn.textContent = 'Заново';
+    newBtn.onclick = () => { hideOverlay(); newGame(); };
+
+    overlayButtons.appendChild(contBtn);
+    overlayButtons.appendChild(newBtn);
+    overlayEl.classList.add('show');
+  }
+
+  function showGameOver() {
+    overlayEmoji.textContent = '💀';
+    overlayTitle.textContent = 'Игра окончена';
+    let extra = '';
+    if (dailyMode) {
+      const best = localStorage.getItem(STORAGE_DAILY_BEST + todayKey() + '_' + SIZE);
+      extra = '<br>Лучший результат дня: <strong style="color:var(--gold)">' + (best || score) + '</strong>';
+    }
+    overlayText.innerHTML = 'Счёт: <strong style="color:var(--text-primary)">' + score + '</strong><br>Рекорд: <strong style="color:var(--gold)">' + highScore + '</strong>' + extra;
+
+    overlayButtons.innerHTML = '';
+    const undoLastBtn = document.createElement('button');
+    undoLastBtn.className = 'overlay-btn secondary';
+    undoLastBtn.textContent = '↶ Отменить';
+    undoLastBtn.disabled = history.length === 0;
+    undoLastBtn.style.opacity = history.length === 0 ? '0.4' : '1';
+    undoLastBtn.onclick = () => {
+      if (popHistory()) {
+        soundUndo();
+        vibrate(15);
+      }
+    };
+
+    const newBtn = document.createElement('button');
+    newBtn.className = 'overlay-btn primary';
+    newBtn.textContent = 'Ещё раз 🔄';
+    newBtn.onclick = () => { hideOverlay(); newGame(); };
+
+    overlayButtons.appendChild(undoLastBtn);
+    overlayButtons.appendChild(newBtn);
+    overlayEl.classList.add('show');
+  }
+
+  function hideOverlay() {
+    overlayEl.classList.remove('show');
+  }
+
+  /* ==========================================================
+     ТЕМЫ
+     ========================================================== */
+  function applyTheme(name) {
+    document.body.classList.remove('theme-dark', 'theme-light', 'theme-neon');
+    if (name === 'light') document.body.classList.add('theme-light');
+    else if (name === 'neon') document.body.classList.add('theme-neon');
+    else document.body.classList.add('theme-dark');
+
+    theme = name;
+    localStorage.setItem(STORAGE_THEME, name);
+  }
+
+  const THEMES = ['dark', 'light', 'neon'];
+  const THEME_ICONS = { dark: '🌙', light: '☀️', neon: '🌈' };
+
+  themeBtn.addEventListener('click', () => {
+    const i = THEMES.indexOf(theme);
+    const next = THEMES[(i + 1) % THEMES.length];
+    applyTheme(next);
+    themeBtn.textContent = THEME_ICONS[next];
+  });
+
+  /* ==========================================================
+     ЗВУК ВКЛ/ВЫКЛ
+     ========================================================== */
+  function updateSoundBtn() {
+    soundBtn.textContent = soundEnabled ? '🔊' : '🔇';
+    soundBtn.classList.toggle('off', !soundEnabled);
+  }
+
+  soundBtn.addEventListener('click', () => {
+    soundEnabled = !soundEnabled;
+    localStorage.setItem(STORAGE_SOUND, String(soundEnabled));
+    updateSoundBtn();
+    if (soundEnabled) {
+      initAudio();
+      soundMove();
+    }
+  });
+
+  /* ==========================================================
+     РАЗМЕР ПОЛЯ
+     ========================================================== */
+  sizeGroup.querySelectorAll('.size-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const newSize = parseInt(btn.dataset.size, 10);
+      if (newSize === SIZE) return;
+
+      sizeGroup.querySelectorAll('.size-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      SIZE = newSize;
+      localStorage.setItem(STORAGE_SIZE, String(SIZE));
+
+      buildCells();
+      layout();
+      newGame();
+    });
+  });
+
+  /* ==========================================================
+     ЕЖЕДНЕВНЫЙ ВЫЗОВ
+     ========================================================== */
+  dailyBtn.addEventListener('click', () => {
+    dailyMode = !dailyMode;
+    dailyBtn.classList.toggle('active', dailyMode);
+    if (dailyMode) {
+      dailyBtn.textContent = '🎯';
+      soundMerge();
+    } else {
+      soundMove();
+    }
+    newGame();
+  });
+
+  /* ==========================================================
+     UNDO
+     ========================================================== */
+  undoBtn.addEventListener('click', () => {
+    if (busy) return;
+    if (popHistory()) {
+      soundUndo();
+      vibrate(15);
+    }
+  });
+
+  /* ==========================================================
+     УПРАВЛЕНИЕ — КЛАВИАТУРА
+     ========================================================== */
+  document.addEventListener('keydown', (e) => {
+    const k = e.key;
+    if (k === 'ArrowUp'    || k === 'w' || k === 'W' || k === 'ц' || k === 'Ц') { move('up'); e.preventDefault(); }
+    else if (k === 'ArrowDown'  || k === 's' || k === 'S' || k === 'ы' || k === 'Ы') { move('down'); e.preventDefault(); }
+    else if (k === 'ArrowLeft'  || k === 'a' || k === 'A' || k === 'ф' || k === 'Ф') { move('left'); e.preventDefault(); }
+    else if (k === 'ArrowRight' || k === 'd' || k === 'D' || k === 'в' || k === 'В') { move('right'); e.preventDefault(); }
+    else if ((k === 'z' || k === 'Z' || k === 'я' || k === 'Я') && (e.ctrlKey || e.metaKey)) {
+      if (popHistory()) soundUndo();
+      e.preventDefault();
+    }
+  });
+
+  /* ==========================================================
+     УПРАВЛЕНИЕ — СВАЙПЫ
+     ========================================================== */
+  let touchStartX = 0, touchStartY = 0;
+  const SWIPE_MIN = 24;
+
+  boardEl.addEventListener('touchstart', (e) => {
+    const t = e.touches[0];
+    touchStartX = t.clientX;
+    touchStartY = t.clientY;
+  }, { passive: true });
+
+  boardEl.addEventListener('touchmove', (e) => { e.preventDefault(); }, { passive: false });
+
+  boardEl.addEventListener('touchend', (e) => {
+    if (!e.changedTouches.length) return;
+    const t = e.changedTouches[0];
+    const dx = t.clientX - touchStartX;
+    const dy = t.clientY - touchStartY;
+
+    if (Math.abs(dx) < SWIPE_MIN && Math.abs(dy) < SWIPE_MIN) return;
+
+    if (Math.abs(dx) > Math.abs(dy)) move(dx > 0 ? 'right' : 'left');
+    else move(dy > 0 ? 'down' : 'up');
+  }, { passive: true });
+
+  /* ==========================================================
+     КНОПКА «НОВАЯ ИГРА»
+     ========================================================== */
+  newGameBtn.addEventListener('click', () => newGame());
+
+  /* ==========================================================
+     RESIZE
+     ========================================================== */
+  window.addEventListener('resize', () => { setTimeout(fit, 100); });
+  window.addEventListener('orientationchange', () => { setTimeout(fit, 200); });
+
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden && audioCtx && audioCtx.state === 'suspended') {
+      audioCtx.resume();
+    }
+  });
+
+  /* ==========================================================
+     СТАРТ
+     ========================================================== */
+  // Загружаем сохранённые настройки
+  applyTheme(theme);
+  themeBtn.textContent = THEME_ICONS[theme];
+  updateSoundBtn();
+
+  const savedSize = parseInt(localStorage.getItem(STORAGE_SIZE) || '4', 10);
+  if ([4, 5, 6].includes(savedSize)) {
+    SIZE = savedSize;
+    sizeGroup.querySelectorAll('.size-btn').forEach(b => {
+      b.classList.toggle('active', parseInt(b.dataset.size, 10) === SIZE);
+    });
+  }
+
+  buildCells();
+  fit();
+  newGame();
+</script>
+</body>
+</html>
